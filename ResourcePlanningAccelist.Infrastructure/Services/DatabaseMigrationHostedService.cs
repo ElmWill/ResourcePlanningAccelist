@@ -10,13 +10,16 @@ public sealed class DatabaseMigrationHostedService : IHostedService
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<DatabaseMigrationHostedService> _logger;
+    private readonly IHostEnvironment _hostEnvironment;
 
     public DatabaseMigrationHostedService(
         IServiceScopeFactory serviceScopeFactory,
-        ILogger<DatabaseMigrationHostedService> logger)
+        ILogger<DatabaseMigrationHostedService> logger,
+        IHostEnvironment hostEnvironment)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
+        _hostEnvironment = hostEnvironment;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -27,6 +30,11 @@ public sealed class DatabaseMigrationHostedService : IHostedService
         _logger.LogInformation("Applying pending database migrations.");
         await dbContext.Database.MigrateAsync(cancellationToken);
         _logger.LogInformation("Database migrations applied successfully.");
+
+        if (_hostEnvironment.IsDevelopment())
+        {
+            await DevelopmentDataSeeder.SeedAsync(dbContext, _logger, cancellationToken);
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

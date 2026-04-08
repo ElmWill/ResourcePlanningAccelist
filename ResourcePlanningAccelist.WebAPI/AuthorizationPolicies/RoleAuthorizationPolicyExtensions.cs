@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using ResourcePlanningAccelist.Constants;
 
@@ -7,6 +8,12 @@ public static class RoleAuthorizationPolicyExtensions
 {
     public static IServiceCollection AddRoleAuthorizationPolicies(this IServiceCollection services)
     {
+        services
+            .AddAuthentication(DevelopmentAuthenticationHandler.SchemeName)
+            .AddScheme<AuthenticationSchemeOptions, DevelopmentAuthenticationHandler>(
+                DevelopmentAuthenticationHandler.SchemeName,
+                _ => { });
+
         services.AddAuthorization(options =>
         {
             options.AddPolicy(AuthorizationPolicyNames.MarketingOnly, policy =>

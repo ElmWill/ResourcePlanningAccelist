@@ -14,7 +14,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="MediatR" Version="13.1.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.13.20" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,10 +24,6 @@
     <ProjectReference Include="..\ResourcePlanningAccelist.Contracts\ResourcePlanningAccelist.Contracts.csproj" />
     <ProjectReference Include="..\ResourcePlanningAccelist.Entities\ResourcePlanningAccelist.Entities.csproj" />
     <ProjectReference Include="..\ResourcePlanningAccelist.Infrastructure\ResourcePlanningAccelist.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
   </ItemGroup>
 
 </Project>

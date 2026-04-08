@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch ResourcePlanningAccelist.WebAPI",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/ResourcePlanningAccelist.WebAPI/ResourcePlanningAccelist.WebAPI.csproj",
+      "launchConfigurationId": "ResourcePlanningAccelist.WebAPI"
+    }
+  ]
+}

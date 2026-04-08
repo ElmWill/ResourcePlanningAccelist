@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="ResourcePlanningAccelist.WebAPI/ResourcePlanningAccelist.WebAPI.csproj" />
+  <Project Path="ResourcePlanningAccelist.Commons/ResourcePlanningAccelist.Commons.csproj" />
+  <Project Path="ResourcePlanningAccelist.Contracts/ResourcePlanningAccelist.Contracts.csproj" />
+  <Project Path="ResourcePlanningAccelist.Entities/ResourcePlanningAccelist.Entities.csproj" />
+  <Project Path="ResourcePlanningAccelist.Infrastructure/ResourcePlanningAccelist.Infrastructure.csproj" />
+</Solution>

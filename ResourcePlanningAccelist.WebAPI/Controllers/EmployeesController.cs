@@ -39,4 +39,25 @@ public class EmployeesController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("{employeeId:guid}/assignments")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
+    public async Task<ActionResult<GetEmployeeAssignmentsResponse>> Assignments(
+        Guid employeeId,
+        [FromQuery] string? status,
+        [FromQuery] int? pageNumber,
+        [FromQuery] int? pageSize,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetEmployeeAssignmentsRequest
+        {
+            EmployeeId = employeeId,
+            Status = status,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

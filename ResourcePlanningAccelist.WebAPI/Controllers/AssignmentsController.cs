@@ -39,10 +39,31 @@ public class AssignmentsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{assignmentId:guid}")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    public async Task<ActionResult<GetAssignmentDetailResponse>> Detail(
+        Guid assignmentId,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetAssignmentDetailRequest { AssignmentId = assignmentId };
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost("update-status")]
     [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
     public async Task<ActionResult<UpdateAssignmentStatusResponse>> UpdateStatus(
         [FromBody] UpdateAssignmentStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("update-progress")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    public async Task<ActionResult<UpdateAssignmentProgressResponse>> UpdateProgress(
+        [FromBody] UpdateAssignmentProgressRequest request,
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(request, cancellationToken);

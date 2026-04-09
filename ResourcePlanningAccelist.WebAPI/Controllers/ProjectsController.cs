@@ -59,4 +59,45 @@ public class ProjectsController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPost("update-progress")]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOrPm)]
+    public async Task<ActionResult<UpdateProjectProgressResponse>> UpdateProgress(
+        [FromBody] UpdateProjectProgressRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("cancel")]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOrPm)]
+    public async Task<ActionResult<CancelProjectResponse>> Cancel(
+        [FromBody] CancelProjectRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{projectId:guid}/assignments")]
+    [Authorize(Policy = AuthorizationPolicyNames.ProjectReadAccess)]
+    public async Task<ActionResult<GetProjectAssignmentsResponse>> Assignments(
+        Guid projectId,
+        [FromQuery] string? status,
+        [FromQuery] int? pageNumber,
+        [FromQuery] int? pageSize,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetProjectAssignmentsRequest
+        {
+            ProjectId = projectId,
+            Status = status,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

@@ -60,4 +60,35 @@ public class EmployeesController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("{employeeId:guid}/workload-summary")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
+    public async Task<ActionResult<GetEmployeeWorkloadSummaryResponse>> WorkloadSummary(
+        Guid employeeId,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetEmployeeWorkloadSummaryRequest { EmployeeId = employeeId };
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("update-status")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
+    public async Task<ActionResult<UpdateEmployeeStatusResponse>> UpdateStatus(
+        [FromBody] UpdateEmployeeStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("update-availability")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
+    public async Task<ActionResult<UpdateEmployeeAvailabilityResponse>> UpdateAvailability(
+        [FromBody] UpdateEmployeeAvailabilityRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

@@ -1,7 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ResourcePlanningAccelist.Contracts.RequestModels.ManageGeneralManagerDecisions;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageGeneralManagerPredictions;
+using ResourcePlanningAccelist.Contracts.ResponseModels.ManageGeneralManagerDecisions;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageGeneralManagerPredictions;
 using ResourcePlanningAccelist.WebAPI.AuthorizationPolicies;
 
@@ -64,6 +66,16 @@ public class GeneralManagerController : ControllerBase
             TopSkillLimit = topSkillLimit
         };
 
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("contract-decisions")]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOnly)]
+    public async Task<ActionResult<GetGeneralManagerContractDecisionSummaryResponse>> GetContractDecisions(
+        CancellationToken cancellationToken)
+    {
+        var request = new GetGeneralManagerContractDecisionSummaryRequest();
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }

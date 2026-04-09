@@ -34,9 +34,13 @@ public class GetEmployeeListRequestHandler : IRequestHandler<GetEmployeeListRequ
             {
                 Id = employee.Id,
                 FullName = employee.User.FullName,
+                Email = employee.User.Email,
                 JobTitle = employee.JobTitle,
+                Department = employee.Department != null ? employee.Department.Name : null,
                 AvailabilityPercent = employee.AvailabilityPercent,
-                WorkloadPercent = employee.WorkloadPercent
+                WorkloadPercent = employee.WorkloadPercent,
+                AssignedHours = employee.AssignedHours,
+                Status = employee.Status.ToString()
             })
             .ToListAsync(cancellationToken);
 

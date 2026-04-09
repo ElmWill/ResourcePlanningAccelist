@@ -16,6 +16,9 @@ public static class RoleAuthorizationPolicyExtensions
 
         services.AddAuthorization(options =>
         {
+            options.AddPolicy(AuthorizationPolicyNames.PmOnly, policy =>
+                policy.RequireRole(UserRole.Pm.ToString().ToLowerInvariant()));
+
             options.AddPolicy(AuthorizationPolicyNames.MarketingOnly, policy =>
                 policy.RequireRole(UserRole.Marketing.ToString().ToLowerInvariant()));
 

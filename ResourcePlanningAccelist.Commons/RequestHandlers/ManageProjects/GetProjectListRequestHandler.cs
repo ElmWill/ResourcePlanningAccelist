@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ResourcePlanningAccelist.Commons.Constants;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageProjects;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageProjects;
 using ResourcePlanningAccelist.Entities;
@@ -17,6 +18,10 @@ public class GetProjectListRequestHandler : IRequestHandler<GetProjectListReques
 
     public async Task<GetProjectListResponse> Handle(GetProjectListRequest request, CancellationToken cancellationToken)
     {
+        var pageNumber = Math.Max(request.PageNumber ?? PaginationDefaults.PageNumber, PaginationDefaults.PageNumber);
+        var requestedPageSize = request.PageSize ?? PaginationDefaults.PageSize;
+        var pageSize = Math.Clamp(requestedPageSize, 1, PaginationDefaults.MaxPageSize);
+
         var query = _dbContext.Projects.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Status))
@@ -24,8 +29,13 @@ public class GetProjectListRequestHandler : IRequestHandler<GetProjectListReques
             query = query.Where(project => project.Status.ToString() == request.Status);
         }
 
+        var totalCount = await query.CountAsync(cancellationToken);
+        var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+
         var projects = await query
             .OrderByDescending(project => project.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .Select(project => new ProjectListItemResponse
             {
                 Id = project.Id,
@@ -38,7 +48,11 @@ public class GetProjectListRequestHandler : IRequestHandler<GetProjectListReques
 
         return new GetProjectListResponse
         {
-            Projects = projects
+            Projects = projects,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalPages
         };
     }
 }

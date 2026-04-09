@@ -38,4 +38,25 @@ public class ProjectsController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("{projectId:guid}")]
+    [Authorize(Policy = AuthorizationPolicyNames.ProjectReadAccess)]
+    public async Task<ActionResult<GetProjectDetailResponse>> Detail(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetProjectDetailRequest { ProjectId = projectId };
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("update-status")]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOrPm)]
+    public async Task<ActionResult<UpdateProjectStatusResponse>> UpdateStatus(
+        [FromBody] UpdateProjectStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

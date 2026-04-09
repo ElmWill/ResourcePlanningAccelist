@@ -28,4 +28,24 @@ public class AssignmentsController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("list")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    public async Task<ActionResult<GetAssignmentListResponse>> List(
+        [FromQuery] GetAssignmentListRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("update-status")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    public async Task<ActionResult<UpdateAssignmentStatusResponse>> UpdateStatus(
+        [FromBody] UpdateAssignmentStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

@@ -28,4 +28,15 @@ public class EmployeesController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("{employeeId:guid}")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
+    public async Task<ActionResult<GetEmployeeDetailResponse>> Detail(
+        Guid employeeId,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetEmployeeDetailRequest { EmployeeId = employeeId };
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

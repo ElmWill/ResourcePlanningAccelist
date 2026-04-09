@@ -24,6 +24,11 @@ public static class RoleAuthorizationPolicyExtensions
                     UserRole.Pm.ToString().ToLowerInvariant(),
                     UserRole.Hr.ToString().ToLowerInvariant()));
 
+            options.AddPolicy(AuthorizationPolicyNames.GmOrPm, policy =>
+                policy.RequireRole(
+                    UserRole.Gm.ToString().ToLowerInvariant(),
+                    UserRole.Pm.ToString().ToLowerInvariant()));
+
             options.AddPolicy(AuthorizationPolicyNames.HrOrGm, policy =>
                 policy.RequireRole(
                     UserRole.Hr.ToString().ToLowerInvariant(),

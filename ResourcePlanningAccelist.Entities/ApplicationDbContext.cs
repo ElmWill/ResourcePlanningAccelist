@@ -33,6 +33,10 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<ProjectAttachment> ProjectAttachments => Set<ProjectAttachment>();
 
+    public DbSet<ProjectMilestone> ProjectMilestones => Set<ProjectMilestone>();
+
+    public DbSet<ProjectTimelineTask> ProjectTimelineTasks => Set<ProjectTimelineTask>();
+
     public DbSet<Assignment> Assignments => Set<Assignment>();
 
     public DbSet<AssignmentReview> AssignmentReviews => Set<AssignmentReview>();
@@ -102,6 +106,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<GmDecision>().Property(entity => entity.Status).HasConversion<string>();
         modelBuilder.Entity<Notification>().Property(entity => entity.Type).HasConversion<string>();
         modelBuilder.Entity<ProjectReview>().Property(entity => entity.Decision).HasConversion<string>();
+        modelBuilder.Entity<ProjectTimelineTask>().Property(entity => entity.Status).HasConversion<string>();
     }
 
     private static void ConfigureRelationships(ModelBuilder modelBuilder)
@@ -235,6 +240,16 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(item => item.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            entity.HasMany(item => item.Milestones)
+                .WithOne(item => item.Project)
+                .HasForeignKey(item => item.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(item => item.TimelineTasks)
+                .WithOne(item => item.Project)
+                .HasForeignKey(item => item.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasMany(item => item.Assignments)
                 .WithOne(item => item.Project)
                 .HasForeignKey(item => item.ProjectId)
@@ -291,6 +306,10 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<ProjectReview>().HasIndex(entity => entity.ProjectId);
         modelBuilder.Entity<ProjectResourceRequirement>().HasIndex(entity => entity.ProjectId);
         modelBuilder.Entity<ProjectAttachment>().HasIndex(entity => entity.ProjectId);
+        modelBuilder.Entity<ProjectMilestone>().HasIndex(entity => entity.ProjectId);
+        modelBuilder.Entity<ProjectMilestone>().HasIndex(entity => new { entity.ProjectId, entity.SortOrder });
+        modelBuilder.Entity<ProjectTimelineTask>().HasIndex(entity => entity.ProjectId);
+        modelBuilder.Entity<ProjectTimelineTask>().HasIndex(entity => new { entity.ProjectId, entity.SortOrder });
         modelBuilder.Entity<Assignment>().HasIndex(entity => entity.ProjectId);
         modelBuilder.Entity<Assignment>().HasIndex(entity => entity.EmployeeId);
         modelBuilder.Entity<Assignment>().HasIndex(entity => entity.Status);

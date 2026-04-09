@@ -91,4 +91,78 @@ public class ProjectManagerController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("projects/{projectId:guid}/milestones")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    public async Task<ActionResult<GetProjectMilestoneListResponse>> Milestones(
+        Guid projectId,
+        [FromQuery] Guid pmUserId,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetProjectMilestoneListRequest
+        {
+            ProjectId = projectId,
+            PmUserId = pmUserId
+        };
+
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("projects/milestones/create")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    public async Task<ActionResult<CreateProjectMilestoneResponse>> CreateMilestone(
+        [FromBody] CreateProjectMilestoneRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("projects/milestones/update-status")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    public async Task<ActionResult<UpdateProjectMilestoneStatusResponse>> UpdateMilestoneStatus(
+        [FromBody] UpdateProjectMilestoneStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("projects/{projectId:guid}/timeline-tasks")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    public async Task<ActionResult<GetProjectTimelineTaskListResponse>> TimelineTasks(
+        Guid projectId,
+        [FromQuery] Guid pmUserId,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetProjectTimelineTaskListRequest
+        {
+            ProjectId = projectId,
+            PmUserId = pmUserId
+        };
+
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("projects/timeline-tasks/create")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    public async Task<ActionResult<CreateProjectTimelineTaskResponse>> CreateTimelineTask(
+        [FromBody] CreateProjectTimelineTaskRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("projects/timeline-tasks/update")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    public async Task<ActionResult<UpdateProjectTimelineTaskResponse>> UpdateTimelineTask(
+        [FromBody] UpdateProjectTimelineTaskRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

@@ -61,6 +61,10 @@ public class Project : AuditableEntity
 
     public virtual ICollection<ProjectAttachment> Attachments { get; set; } = new List<ProjectAttachment>();
 
+    public virtual ICollection<ProjectMilestone> Milestones { get; set; } = new List<ProjectMilestone>();
+
+    public virtual ICollection<ProjectTimelineTask> TimelineTasks { get; set; } = new List<ProjectTimelineTask>();
+
     public virtual ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
 
     public virtual ICollection<GmDecision> Decisions { get; set; } = new List<GmDecision>();

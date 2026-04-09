@@ -118,3 +118,10 @@ public enum EmploymentStatus
     Inactive,
     Resigned
 }
+
+public enum TimelineTaskStatus
+{
+    Pending,
+    InProgress,
+    Completed
+}

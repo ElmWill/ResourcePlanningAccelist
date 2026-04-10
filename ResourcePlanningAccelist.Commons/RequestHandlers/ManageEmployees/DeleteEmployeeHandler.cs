@@ -40,9 +40,15 @@ public class DeleteEmployeeHandler : IRequestHandler<DeleteEmployeeRequest, Dele
             employee.User.IsActive = false;
         }
 
-        if (employee.Contract != null)
+        // Terminate any active contracts
+        var activeContracts = await _dbContext.EmployeeContracts
+            .Where(c => c.EmployeeId == employee.Id && (c.Status == ContractStatus.Active || c.Status == ContractStatus.Extended))
+            .ToListAsync(cancellationToken);
+
+        foreach (var contract in activeContracts)
         {
-            employee.Contract.EndDate = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            contract.Status = ContractStatus.Terminated;
+            contract.EndDate = DateOnly.FromDateTime(DateTime.UtcNow.Date);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

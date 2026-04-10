@@ -310,7 +310,7 @@ CREATE INDEX IF NOT EXISTS idx_assignment_reviews_status ON assignment_reviews(s
 
 CREATE TABLE IF NOT EXISTS employee_contracts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  employee_id uuid NOT NULL UNIQUE REFERENCES employees(id) ON DELETE CASCADE,
+  employee_id uuid NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
   current_project_id uuid REFERENCES projects(id) ON DELETE SET NULL,
   start_date date,
   end_date date,

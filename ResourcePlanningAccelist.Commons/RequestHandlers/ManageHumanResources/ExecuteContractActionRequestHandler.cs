@@ -76,7 +76,7 @@ public class ExecuteContractActionRequestHandler : IRequestHandler<ExecuteContra
                     var newStartDate = currentContract.EndDate ?? DateOnly.FromDateTime(DateTime.Today);
                     var newContract = new EmployeeContract
                     {
-                        Id = new Guid(),
+                        Id = Guid.NewGuid(),
                         EmployeeId = employee.Id,
                         StartDate = newStartDate,
                         EndDate = newStartDate.AddYears(1),

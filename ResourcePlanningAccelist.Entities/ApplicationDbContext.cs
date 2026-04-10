@@ -197,9 +197,9 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(item => item.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(item => item.Contract)
+            entity.HasMany(item => item.Contracts)
                 .WithOne(item => item.Employee)
-                .HasForeignKey<EmployeeContract>(item => item.EmployeeId)
+                .HasForeignKey(item => item.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -325,7 +325,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Assignment>().HasIndex(entity => entity.EmployeeId);
         modelBuilder.Entity<Assignment>().HasIndex(entity => entity.Status);
         modelBuilder.Entity<AssignmentReview>().HasIndex(entity => entity.Status);
-        modelBuilder.Entity<EmployeeContract>().HasIndex(entity => entity.EmployeeId).IsUnique();
+        modelBuilder.Entity<EmployeeContract>().HasIndex(entity => entity.EmployeeId);
         modelBuilder.Entity<GmDecision>().HasIndex(entity => entity.Status);
         modelBuilder.Entity<GmDecision>().HasIndex(entity => entity.DecisionType);
         modelBuilder.Entity<Notification>().HasIndex(entity => new { entity.UserId, entity.IsRead });

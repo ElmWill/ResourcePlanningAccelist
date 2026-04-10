@@ -122,6 +122,33 @@ internal static class DevelopmentDataSeeder
             IsActive = true
         };
 
+        var qaUser = new AppUser
+        {
+            Email = "qa.demo@accelist.local",
+            FullName = "Quinn QA",
+            Role = UserRole.Employee,
+            Department = engineeringDepartment,
+            IsActive = true
+        };
+
+        var devopsUser = new AppUser
+        {
+            Email = "devops.demo@accelist.local",
+            FullName = "Devon Ops",
+            Role = UserRole.Employee,
+            Department = engineeringDepartment,
+            IsActive = true
+        };
+
+        var analystUser = new AppUser
+        {
+            Email = "analyst.demo@accelist.local",
+            FullName = "Avery Analyst",
+            Role = UserRole.Employee,
+            Department = productDepartment,
+            IsActive = true
+        };
+
         dbContext.Users.AddRange(
             marketingUser,
             pmUser,
@@ -130,7 +157,10 @@ internal static class DevelopmentDataSeeder
             backendUser,
             frontendUser,
             designerUser,
-            productUser);
+            productUser,
+            qaUser,
+            devopsUser,
+            analystUser);
 
         var nodeSkill = new Skill { Name = "Node.js", Category = SkillCategory.Technical };
         var postgreSqlSkill = new Skill { Name = "PostgreSQL", Category = SkillCategory.Technical };
@@ -138,6 +168,9 @@ internal static class DevelopmentDataSeeder
         var figmaSkill = new Skill { Name = "Figma", Category = SkillCategory.Technical };
         var productManagementSkill = new Skill { Name = "Product Management", Category = SkillCategory.Business };
         var agileSkill = new Skill { Name = "Agile", Category = SkillCategory.Soft };
+        var qaAutomationSkill = new Skill { Name = "QA Automation", Category = SkillCategory.Technical };
+        var devOpsSkill = new Skill { Name = "DevOps", Category = SkillCategory.Technical };
+        var analyticsSkill = new Skill { Name = "Analytics", Category = SkillCategory.Business };
 
         dbContext.Skills.AddRange(
             nodeSkill,
@@ -145,7 +178,10 @@ internal static class DevelopmentDataSeeder
             reactSkill,
             figmaSkill,
             productManagementSkill,
-            agileSkill);
+            agileSkill,
+            qaAutomationSkill,
+            devOpsSkill,
+            analyticsSkill);
 
         var backendEmployee = new Employee
         {
@@ -199,11 +235,53 @@ internal static class DevelopmentDataSeeder
             HireDate = today.AddMonths(-20)
         };
 
+        var qaEmployee = new Employee
+        {
+            User = qaUser,
+            Department = engineeringDepartment,
+            JobTitle = "QA Engineer",
+            Status = EmploymentStatus.Active,
+            AvailabilityPercent = 74,
+            WorkloadPercent = 26,
+            WorkloadState = WorkloadStatus.Available,
+            AssignedHours = 2.0m,
+            HireDate = today.AddMonths(-16)
+        };
+
+        var devopsEmployee = new Employee
+        {
+            User = devopsUser,
+            Department = engineeringDepartment,
+            JobTitle = "DevOps Engineer",
+            Status = EmploymentStatus.Active,
+            AvailabilityPercent = 69,
+            WorkloadPercent = 31,
+            WorkloadState = WorkloadStatus.Available,
+            AssignedHours = 2.4m,
+            HireDate = today.AddMonths(-22)
+        };
+
+        var analystEmployee = new Employee
+        {
+            User = analystUser,
+            Department = productDepartment,
+            JobTitle = "Business Analyst",
+            Status = EmploymentStatus.Active,
+            AvailabilityPercent = 82,
+            WorkloadPercent = 18,
+            WorkloadState = WorkloadStatus.Available,
+            AssignedHours = 1.6m,
+            HireDate = today.AddMonths(-11)
+        };
+
         dbContext.Employees.AddRange(
             backendEmployee,
             frontendEmployee,
             designerEmployee,
-            productEmployee);
+            productEmployee,
+            qaEmployee,
+            devopsEmployee,
+            analystEmployee);
 
         dbContext.EmployeeSkills.AddRange(
             new EmployeeSkill { Employee = backendEmployee, Skill = nodeSkill, Proficiency = 5, IsPrimary = true },
@@ -214,7 +292,13 @@ internal static class DevelopmentDataSeeder
             new EmployeeSkill { Employee = designerEmployee, Skill = figmaSkill, Proficiency = 5, IsPrimary = true },
             new EmployeeSkill { Employee = designerEmployee, Skill = reactSkill, Proficiency = 2, IsPrimary = false },
             new EmployeeSkill { Employee = productEmployee, Skill = productManagementSkill, Proficiency = 5, IsPrimary = true },
-            new EmployeeSkill { Employee = productEmployee, Skill = agileSkill, Proficiency = 4, IsPrimary = false });
+            new EmployeeSkill { Employee = productEmployee, Skill = agileSkill, Proficiency = 4, IsPrimary = false },
+            new EmployeeSkill { Employee = qaEmployee, Skill = qaAutomationSkill, Proficiency = 5, IsPrimary = true },
+            new EmployeeSkill { Employee = qaEmployee, Skill = agileSkill, Proficiency = 4, IsPrimary = false },
+            new EmployeeSkill { Employee = devopsEmployee, Skill = devOpsSkill, Proficiency = 5, IsPrimary = true },
+            new EmployeeSkill { Employee = devopsEmployee, Skill = nodeSkill, Proficiency = 3, IsPrimary = false },
+            new EmployeeSkill { Employee = analystEmployee, Skill = analyticsSkill, Proficiency = 5, IsPrimary = true },
+            new EmployeeSkill { Employee = analystEmployee, Skill = productManagementSkill, Proficiency = 3, IsPrimary = false });
 
         dbContext.EmployeeContracts.AddRange(
             new EmployeeContract
@@ -248,6 +332,30 @@ internal static class DevelopmentDataSeeder
                 EndDate = today.AddMonths(8),
                 Status = ContractStatus.Active,
                 Notes = "Product lead covering roadmap and delivery"
+            },
+            new EmployeeContract
+            {
+                Employee = qaEmployee,
+                StartDate = today.AddMonths(-14),
+                EndDate = today.AddMonths(7),
+                Status = ContractStatus.Active,
+                Notes = "QA coverage for testing and quality gates"
+            },
+            new EmployeeContract
+            {
+                Employee = devopsEmployee,
+                StartDate = today.AddMonths(-20),
+                EndDate = today.AddMonths(10),
+                Status = ContractStatus.Active,
+                Notes = "Environment and deployment support"
+            },
+            new EmployeeContract
+            {
+                Employee = analystEmployee,
+                StartDate = today.AddMonths(-10),
+                EndDate = today.AddMonths(5),
+                Status = ContractStatus.Active,
+                Notes = "Requirement analysis and acceptance support"
             });
 
         var historicalProject = new Project
@@ -288,7 +396,45 @@ internal static class DevelopmentDataSeeder
             ApprovedAt = now.AddDays(-2)
         };
 
-        dbContext.Projects.AddRange(historicalProject, currentProject);
+        var mobileProject = new Project
+        {
+            CreatedByUser = marketingUser,
+            PmOwnerUser = pmUser,
+            ApprovedByUser = gmUser,
+            Name = "Mobile App Refresh",
+            ClientName = "Accelist Internal",
+            Description = "Modernize the internal mobile app experience and stabilize API integrations.",
+            StartDate = today.AddDays(-12),
+            EndDate = today.AddMonths(2),
+            Status = ProjectStatus.InProgress,
+            ProgressPercent = 42,
+            RiskLevel = ProjectRiskLevel.Medium,
+            ResourceUtilizationPercent = 70,
+            TotalRequiredResources = 3,
+            SubmittedAt = now.AddDays(-15),
+            ApprovedAt = now.AddDays(-13)
+        };
+
+        var portalProject = new Project
+        {
+            CreatedByUser = marketingUser,
+            PmOwnerUser = pmUser,
+            ApprovedByUser = gmUser,
+            Name = "Customer Portal Improvements",
+            ClientName = "Enterprise Customer Success",
+            Description = "Deliver a new customer self-service flow with analytics and notification upgrades.",
+            StartDate = today.AddDays(7),
+            EndDate = today.AddMonths(4),
+            Status = ProjectStatus.Assigned,
+            ProgressPercent = 18,
+            RiskLevel = ProjectRiskLevel.Low,
+            ResourceUtilizationPercent = 48,
+            TotalRequiredResources = 4,
+            SubmittedAt = now.AddDays(-6),
+            ApprovedAt = now.AddDays(-5)
+        };
+
+        dbContext.Projects.AddRange(historicalProject, currentProject, mobileProject, portalProject);
 
         var historicalBackendRequirement = new ProjectResourceRequirement
         {
@@ -360,6 +506,76 @@ internal static class DevelopmentDataSeeder
             Notes = "Stakeholder coordination and planning"
         };
 
+        var mobileBackendRequirement = new ProjectResourceRequirement
+        {
+            Project = mobileProject,
+            RoleName = "Backend Developer",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Mid,
+            SortOrder = 1,
+            Notes = "API integration and service stabilization"
+        };
+
+        var mobileFrontendRequirement = new ProjectResourceRequirement
+        {
+            Project = mobileProject,
+            RoleName = "Frontend Developer",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Mid,
+            SortOrder = 2,
+            Notes = "Mobile UI and performance enhancements"
+        };
+
+        var mobileProductRequirement = new ProjectResourceRequirement
+        {
+            Project = mobileProject,
+            RoleName = "Product Manager",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Mid,
+            SortOrder = 3,
+            Notes = "Scope alignment and release planning"
+        };
+
+        var portalBackendRequirement = new ProjectResourceRequirement
+        {
+            Project = portalProject,
+            RoleName = "Backend Developer",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Senior,
+            SortOrder = 1,
+            Notes = "Notification and analytics APIs"
+        };
+
+        var portalFrontendRequirement = new ProjectResourceRequirement
+        {
+            Project = portalProject,
+            RoleName = "Frontend Developer",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Mid,
+            SortOrder = 2,
+            Notes = "Customer portal UX and dashboard updates"
+        };
+
+        var portalDesignerRequirement = new ProjectResourceRequirement
+        {
+            Project = portalProject,
+            RoleName = "UI/UX Designer",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Mid,
+            SortOrder = 3,
+            Notes = "Design system updates and usability improvements"
+        };
+
+        var portalProductRequirement = new ProjectResourceRequirement
+        {
+            Project = portalProject,
+            RoleName = "Product Manager",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Mid,
+            SortOrder = 4,
+            Notes = "Stakeholder cadence and acceptance planning"
+        };
+
         dbContext.ProjectResourceRequirements.AddRange(
             historicalBackendRequirement,
             historicalFrontendRequirement,
@@ -367,7 +583,14 @@ internal static class DevelopmentDataSeeder
             currentBackendRequirement,
             currentFrontendRequirement,
             currentDesignerRequirement,
-            currentProductRequirement);
+            currentProductRequirement,
+            mobileBackendRequirement,
+            mobileFrontendRequirement,
+            mobileProductRequirement,
+            portalBackendRequirement,
+            portalFrontendRequirement,
+            portalDesignerRequirement,
+            portalProductRequirement);
 
         dbContext.ProjectRequirementSkills.AddRange(
             new ProjectRequirementSkill { Requirement = historicalBackendRequirement, Skill = nodeSkill },
@@ -380,7 +603,20 @@ internal static class DevelopmentDataSeeder
             new ProjectRequirementSkill { Requirement = currentFrontendRequirement, Skill = reactSkill },
             new ProjectRequirementSkill { Requirement = currentDesignerRequirement, Skill = figmaSkill },
             new ProjectRequirementSkill { Requirement = currentProductRequirement, Skill = productManagementSkill },
-            new ProjectRequirementSkill { Requirement = currentProductRequirement, Skill = agileSkill });
+            new ProjectRequirementSkill { Requirement = currentProductRequirement, Skill = agileSkill },
+            new ProjectRequirementSkill { Requirement = currentProductRequirement, Skill = analyticsSkill },
+            new ProjectRequirementSkill { Requirement = mobileBackendRequirement, Skill = nodeSkill },
+            new ProjectRequirementSkill { Requirement = mobileBackendRequirement, Skill = postgreSqlSkill },
+            new ProjectRequirementSkill { Requirement = mobileFrontendRequirement, Skill = reactSkill },
+            new ProjectRequirementSkill { Requirement = mobileProductRequirement, Skill = productManagementSkill },
+            new ProjectRequirementSkill { Requirement = mobileProductRequirement, Skill = agileSkill },
+            new ProjectRequirementSkill { Requirement = portalBackendRequirement, Skill = nodeSkill },
+            new ProjectRequirementSkill { Requirement = portalBackendRequirement, Skill = postgreSqlSkill },
+            new ProjectRequirementSkill { Requirement = portalFrontendRequirement, Skill = reactSkill },
+            new ProjectRequirementSkill { Requirement = portalDesignerRequirement, Skill = figmaSkill },
+            new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = productManagementSkill },
+            new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = agileSkill },
+            new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = analyticsSkill });
 
         dbContext.ProjectMilestones.AddRange(
             new ProjectMilestone
@@ -468,6 +704,61 @@ internal static class DevelopmentDataSeeder
                 DueDate = today.AddMonths(3),
                 IsCompleted = false,
                 SortOrder = 6
+            },
+            new ProjectMilestone
+            {
+                Project = mobileProject,
+                Title = "API Audit",
+                Description = "Audit existing mobile API compatibility",
+                DueDate = today.AddDays(-2),
+                IsCompleted = true,
+                CompletedAt = now.AddDays(-2),
+                SortOrder = 1
+            },
+            new ProjectMilestone
+            {
+                Project = mobileProject,
+                Title = "Core Flow Refresh",
+                Description = "Refresh onboarding and profile flows",
+                DueDate = today.AddDays(14),
+                IsCompleted = false,
+                SortOrder = 2
+            },
+            new ProjectMilestone
+            {
+                Project = mobileProject,
+                Title = "Release Candidate",
+                Description = "Finalize release candidate for QA",
+                DueDate = today.AddDays(38),
+                IsCompleted = false,
+                SortOrder = 3
+            },
+            new ProjectMilestone
+            {
+                Project = portalProject,
+                Title = "Kickoff Approved",
+                Description = "Kickoff and plan approved by stakeholders",
+                DueDate = today.AddDays(10),
+                IsCompleted = false,
+                SortOrder = 1
+            },
+            new ProjectMilestone
+            {
+                Project = portalProject,
+                Title = "Prototype Review",
+                Description = "Review first clickable prototype",
+                DueDate = today.AddDays(30),
+                IsCompleted = false,
+                SortOrder = 2
+            },
+            new ProjectMilestone
+            {
+                Project = portalProject,
+                Title = "Analytics Release",
+                Description = "Release first analytics-enabled portal flow",
+                DueDate = today.AddDays(62),
+                IsCompleted = false,
+                SortOrder = 3
             });
 
         dbContext.ProjectTimelineTasks.AddRange(
@@ -530,6 +821,66 @@ internal static class DevelopmentDataSeeder
                 ColorTag = "purple",
                 Status = TimelineTaskStatus.Pending,
                 SortOrder = 4
+            },
+            new ProjectTimelineTask
+            {
+                Project = mobileProject,
+                Name = "API Stabilization",
+                StartOffsetDays = 0,
+                DurationDays = 18,
+                ColorTag = "blue",
+                Status = TimelineTaskStatus.InProgress,
+                SortOrder = 1
+            },
+            new ProjectTimelineTask
+            {
+                Project = mobileProject,
+                Name = "UI Refresh",
+                StartOffsetDays = 12,
+                DurationDays = 24,
+                ColorTag = "green",
+                Status = TimelineTaskStatus.Pending,
+                SortOrder = 2
+            },
+            new ProjectTimelineTask
+            {
+                Project = mobileProject,
+                Name = "QA and Rollout",
+                StartOffsetDays = 34,
+                DurationDays = 18,
+                ColorTag = "yellow",
+                Status = TimelineTaskStatus.Pending,
+                SortOrder = 3
+            },
+            new ProjectTimelineTask
+            {
+                Project = portalProject,
+                Name = "Discovery",
+                StartOffsetDays = 0,
+                DurationDays = 14,
+                ColorTag = "blue",
+                Status = TimelineTaskStatus.Pending,
+                SortOrder = 1
+            },
+            new ProjectTimelineTask
+            {
+                Project = portalProject,
+                Name = "Feature Build",
+                StartOffsetDays = 14,
+                DurationDays = 42,
+                ColorTag = "green",
+                Status = TimelineTaskStatus.Pending,
+                SortOrder = 2
+            },
+            new ProjectTimelineTask
+            {
+                Project = portalProject,
+                Name = "Launch Prep",
+                StartOffsetDays = 56,
+                DurationDays = 20,
+                ColorTag = "purple",
+                Status = TimelineTaskStatus.Pending,
+                SortOrder = 3
             });
 
         dbContext.Assignments.AddRange(
@@ -629,6 +980,130 @@ internal static class DevelopmentDataSeeder
                 Status = AssignmentStatus.Approved,
                 ProgressPercent = 25,
                 AcceptedAt = now.AddDays(-1)
+            },
+            new Assignment
+            {
+                Project = currentProject,
+                Employee = qaEmployee,
+                AssignedByUser = pmUser,
+                RoleName = "QA Engineer",
+                StartDate = currentProject.StartDate,
+                EndDate = currentProject.EndDate,
+                AllocationPercent = 35,
+                Priority = PriorityLevel.Medium,
+                Status = AssignmentStatus.Accepted,
+                ProgressPercent = 32,
+                AcceptedAt = now.AddDays(-2)
+            },
+            new Assignment
+            {
+                Project = currentProject,
+                Employee = devopsEmployee,
+                AssignedByUser = pmUser,
+                RoleName = "DevOps Engineer",
+                StartDate = currentProject.StartDate,
+                EndDate = currentProject.EndDate,
+                AllocationPercent = 30,
+                Priority = PriorityLevel.Medium,
+                Status = AssignmentStatus.InProgress,
+                ProgressPercent = 40,
+                AcceptedAt = now.AddDays(-2)
+            },
+            new Assignment
+            {
+                Project = mobileProject,
+                Employee = backendEmployee,
+                AssignedByUser = pmUser,
+                RoleName = "Backend Developer",
+                StartDate = mobileProject.StartDate,
+                EndDate = mobileProject.EndDate,
+                AllocationPercent = 55,
+                Priority = PriorityLevel.High,
+                Status = AssignmentStatus.InProgress,
+                ProgressPercent = 45,
+                AcceptedAt = now.AddDays(-10)
+            },
+            new Assignment
+            {
+                Project = mobileProject,
+                Employee = frontendEmployee,
+                AssignedByUser = pmUser,
+                RoleName = "Frontend Developer",
+                StartDate = mobileProject.StartDate,
+                EndDate = mobileProject.EndDate,
+                AllocationPercent = 40,
+                Priority = PriorityLevel.Medium,
+                Status = AssignmentStatus.Accepted,
+                ProgressPercent = 38,
+                AcceptedAt = now.AddDays(-9)
+            },
+            new Assignment
+            {
+                Project = mobileProject,
+                Employee = productEmployee,
+                AssignedByUser = pmUser,
+                RoleName = "Product Manager",
+                StartDate = mobileProject.StartDate,
+                EndDate = mobileProject.EndDate,
+                AllocationPercent = 35,
+                Priority = PriorityLevel.Medium,
+                Status = AssignmentStatus.InProgress,
+                ProgressPercent = 40,
+                AcceptedAt = now.AddDays(-8)
+            },
+            new Assignment
+            {
+                Project = mobileProject,
+                Employee = qaEmployee,
+                AssignedByUser = pmUser,
+                RoleName = "QA Engineer",
+                StartDate = mobileProject.StartDate,
+                EndDate = mobileProject.EndDate,
+                AllocationPercent = 28,
+                Priority = PriorityLevel.Medium,
+                Status = AssignmentStatus.Pending,
+                ProgressPercent = 15
+            },
+            new Assignment
+            {
+                Project = portalProject,
+                Employee = designerEmployee,
+                AssignedByUser = pmUser,
+                RoleName = "UI/UX Designer",
+                StartDate = portalProject.StartDate,
+                EndDate = portalProject.EndDate,
+                AllocationPercent = 35,
+                Priority = PriorityLevel.Medium,
+                Status = AssignmentStatus.Pending,
+                ProgressPercent = 12
+            },
+            new Assignment
+            {
+                Project = portalProject,
+                Employee = productEmployee,
+                AssignedByUser = pmUser,
+                RoleName = "Product Manager",
+                StartDate = portalProject.StartDate,
+                EndDate = portalProject.EndDate,
+                AllocationPercent = 30,
+                Priority = PriorityLevel.Medium,
+                Status = AssignmentStatus.Approved,
+                ProgressPercent = 16,
+                AcceptedAt = now.AddDays(-3)
+            },
+            new Assignment
+            {
+                Project = portalProject,
+                Employee = analystEmployee,
+                AssignedByUser = pmUser,
+                RoleName = "Business Analyst",
+                StartDate = portalProject.StartDate,
+                EndDate = portalProject.EndDate,
+                AllocationPercent = 32,
+                Priority = PriorityLevel.Medium,
+                Status = AssignmentStatus.Accepted,
+                ProgressPercent = 20,
+                AcceptedAt = now.AddDays(-3)
             });
 
         dbContext.GmDecisions.AddRange(

@@ -60,6 +60,24 @@ public class CreateEmployeeHandler : IRequestHandler<CreateEmployeeRequest, Crea
         };
         _dbContext.Employees.Add(employee);
 
+        var now = DateTime.UtcNow;
+        var todayDate = DateOnly.FromDateTime(now);
+        var contract = new EmployeeContract
+        {
+            Id = Guid.NewGuid(),
+            Employee = employee,
+            EmployeeId = employee.Id,
+            Notes = "Contract Initialized by HR",
+            CreatedAt = now,
+            CreatedBy = "73101e8c-98a8-489d-ae4d-2e549eec1d85", //hardcoded HR
+            StartDate = todayDate,
+            EndDate = todayDate.AddYears(1),
+            Status = ContractStatus.Active,
+            UpdatedAt = now,
+            UpdatedBy = "73101e8c-98a8-489d-ae4d-2e549eec1d85"
+        };
+        _dbContext.EmployeeContracts.Add(contract);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new CreateEmployeeResponse

@@ -1,8 +1,10 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageEmployees;
+using ResourcePlanningAccelist.Contracts.ResponseModels.ManageAssignments;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageEmployees;
 using ResourcePlanningAccelist.Entities;
+using ResourcePlanningAccelist.Constants;
 
 namespace ResourcePlanningAccelist.Commons.RequestHandlers.ManageEmployees;
 
@@ -21,6 +23,8 @@ public class GetEmployeeListRequestHandler : IRequestHandler<GetEmployeeListRequ
             .AsNoTracking()
             .Include(employee => employee.User)
             .Include(employee => employee.Department)
+            .Include(employee => employee.Assignments)
+                .ThenInclude(a => a.Project)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Department))
@@ -40,7 +44,21 @@ public class GetEmployeeListRequestHandler : IRequestHandler<GetEmployeeListRequ
                 AvailabilityPercent = employee.AvailabilityPercent,
                 WorkloadPercent = employee.WorkloadPercent,
                 AssignedHours = employee.AssignedHours,
-                Status = employee.Status.ToString()
+                Phone = employee.Phone,
+                Status = employee.Status.ToString(),
+                Assignments = employee.Assignments.Where(a => a.Status == AssignmentStatus.Approved || a.Status == AssignmentStatus.Accepted).Select(a => new AssignmentListItemResponse
+                {
+                    Id = a.Id,
+                    ProjectId = a.ProjectId,
+                    ProjectName = a.Project.Name,
+                    EmployeeId = a.EmployeeId,
+                    EmployeeName = a.Employee.User.FullName,
+                    RoleName = a.RoleName,
+                    Status = a.Status.ToString(),
+                    AllocationPercent = a.AllocationPercent,
+                    StartDate = a.StartDate,
+                    EndDate = a.EndDate
+                }).ToList()
             })
             .ToListAsync(cancellationToken);
 

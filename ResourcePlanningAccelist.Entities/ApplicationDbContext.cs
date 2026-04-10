@@ -49,6 +49,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    public DbSet<HiringRequest> HiringRequests => Set<HiringRequest>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -105,6 +107,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<GmDecision>().Property(entity => entity.DecisionType).HasConversion<string>();
         modelBuilder.Entity<GmDecision>().Property(entity => entity.Status).HasConversion<string>();
         modelBuilder.Entity<Notification>().Property(entity => entity.Type).HasConversion<string>();
+        modelBuilder.Entity<HiringRequest>().Property(entity => entity.Status).HasConversion<string>();
         modelBuilder.Entity<ProjectReview>().Property(entity => entity.Decision).HasConversion<string>();
         modelBuilder.Entity<ProjectTimelineTask>().Property(entity => entity.Status).HasConversion<string>();
     }
@@ -287,6 +290,14 @@ public class ApplicationDbContext : DbContext
             entity.HasMany(item => item.AffectedEmployees)
                 .WithOne(item => item.Decision)
                 .HasForeignKey(item => item.DecisionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<HiringRequest>(entity =>
+        {
+            entity.HasOne(item => item.GmDecision)
+                .WithOne()
+                .HasForeignKey<HiringRequest>(item => item.GmDecisionId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

@@ -1,0 +1,8 @@
+using MediatR;
+using ResourcePlanningAccelist.Contracts.ResponseModels.ManageGeneralManagerDecisions;
+
+namespace ResourcePlanningAccelist.Contracts.RequestModels.ManageGeneralManagerDecisions;
+
+public class GetGeneralManagerDecisionListRequest : IRequest<GetGeneralManagerDecisionListResponse>
+{
+}

@@ -27,6 +27,7 @@ public class GetAssignmentListRequestHandler : IRequestHandler<GetAssignmentList
             .Include(item => item.Project)
             .Include(item => item.Employee)
                 .ThenInclude(item => item.User)
+            .Include(item => item.AssignedByUser)
             .AsQueryable();
 
         if (request.ProjectId.HasValue)
@@ -60,7 +61,10 @@ public class GetAssignmentListRequestHandler : IRequestHandler<GetAssignmentList
                 EmployeeName = item.Employee.User.FullName,
                 RoleName = item.RoleName,
                 Status = item.Status.ToString(),
-                AllocationPercent = item.AllocationPercent
+                AllocationPercent = item.AllocationPercent,
+                StartDate = item.StartDate,
+                EndDate = item.EndDate,
+                RequestedByName = item.AssignedByUser.FullName
             })
             .ToListAsync(cancellationToken);
 

@@ -79,4 +79,13 @@ public class GeneralManagerController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
-}
+    [HttpGet("decisions")]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOnly)]
+    public async Task<ActionResult<GetGeneralManagerDecisionListResponse>> GetDecisions(
+        CancellationToken cancellationToken)
+    {
+        var request = new GetGeneralManagerDecisionListRequest();
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+}

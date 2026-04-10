@@ -45,7 +45,11 @@ public class GetProjectManagerProjectListRequestHandler : IRequestHandler<GetPro
                 ProjectId = item.Id,
                 Name = item.Name,
                 ClientName = item.ClientName,
-                Status = item.Status.ToString(),
+                Status = item.RiskLevel == ProjectRiskLevel.High || (item.Status == ProjectStatus.InProgress && item.ProgressPercent < 20)
+                    ? "delayed"
+                    : item.RiskLevel == ProjectRiskLevel.Medium && item.Status == ProjectStatus.InProgress
+                        ? "at-risk"
+                        : "on-track",
                 ProgressPercent = item.ProgressPercent,
                 StartDate = item.StartDate,
                 EndDate = item.EndDate,

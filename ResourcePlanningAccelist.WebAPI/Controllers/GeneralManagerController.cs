@@ -88,4 +88,14 @@ public class GeneralManagerController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
-}
+
+    [HttpPost("decisions/recommendation-response")]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOnly)]
+    public async Task<ActionResult<UpdateGeneralManagerRecommendationResponse>> UpdateRecommendationResponse(
+        [FromBody] UpdateGeneralManagerRecommendationResponseRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+}

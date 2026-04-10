@@ -23,4 +23,6 @@ public class AssignmentListItemResponse
     public DateOnly EndDate { get; set; }
 
     public string RequestedByName { get; set; } = string.Empty;
+
+    public string? ConflictWarning { get; set; }
 }

@@ -64,7 +64,8 @@ public class GetAssignmentListRequestHandler : IRequestHandler<GetAssignmentList
                 AllocationPercent = item.AllocationPercent,
                 StartDate = item.StartDate,
                 EndDate = item.EndDate,
-                RequestedByName = item.AssignedByUser.FullName
+                RequestedByName = item.AssignedByUser.FullName,
+                ConflictWarning = item.ConflictWarning
             })
             .ToListAsync(cancellationToken);
 

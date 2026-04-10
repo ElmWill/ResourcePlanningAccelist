@@ -35,11 +35,11 @@ public class GetGeneralManagerProjectRiskRequestHandler : IRequestHandler<GetGen
             .Where(item => item.Status == EmploymentStatus.Active)
             .Include(item => item.EmployeeSkills)
                 .ThenInclude(item => item.Skill)
-            .Include(item => item.Contract)
+            .Include(item => item.Contracts)
             .ToListAsync(cancellationToken);
 
         employees = employees
-            .Where(item => item.Contract == null || item.Contract.Status is ContractStatus.Active or ContractStatus.Extended)
+            .Where(item => !item.Contracts.Any() || item.Contracts.Any(c => c.Status is ContractStatus.Active or ContractStatus.Extended))
             .ToList();
 
         var activeCandidateCount = employees.Count;

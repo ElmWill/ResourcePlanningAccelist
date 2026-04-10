@@ -17,6 +17,6 @@ public class GetEmployeeDetailResponse
     public decimal AvailabilityPercent { get; set; }
 
     public decimal WorkloadPercent { get; set; }
-
+    public string Phone { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
 }

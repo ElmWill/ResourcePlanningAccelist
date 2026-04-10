@@ -32,6 +32,7 @@ public class GetEmployeeDetailRequestHandler : IRequestHandler<GetEmployeeDetail
                 Department = item.Department != null ? item.Department.Name : null,
                 AvailabilityPercent = item.AvailabilityPercent,
                 WorkloadPercent = item.WorkloadPercent,
+                Phone = item.Phone,
                 Status = item.Status.ToString()
             })
             .FirstOrDefaultAsync(cancellationToken);

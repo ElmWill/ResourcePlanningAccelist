@@ -91,4 +91,37 @@ public class EmployeesController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPost("create")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
+    public async Task<ActionResult<CreateEmployeeResponse>> Create(
+        [FromBody] CreateEmployeeRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPut("update/{employeeId:guid}")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
+    public async Task<ActionResult<UpdateEmployeeResponse>> Update(
+        Guid employeeId,
+        [FromBody] UpdateEmployeeRequest request,
+        CancellationToken cancellationToken)
+    {
+        request.EmployeeId = employeeId;
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpDelete("{employeeId:guid}")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
+    public async Task<ActionResult<DeleteEmployeeResponse>> Delete(
+        Guid employeeId,
+        CancellationToken cancellationToken)
+    {
+        var request = new DeleteEmployeeRequest { EmployeeId = employeeId };
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

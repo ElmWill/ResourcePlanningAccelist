@@ -32,7 +32,10 @@ public class GetGeneralManagerContractDecisionSummaryRequestHandler : IRequestHa
                 EmployeeName = item.Employee.User.FullName,
                 EmployeeAvatar = BuildInitials(item.Employee.User.FullName),
                 JobTitle = item.Employee.JobTitle,
-                ContractEndDate = item.Employee.Contract != null ? item.Employee.Contract.EndDate : null,
+                ContractEndDate = item.Employee.Contracts
+                    .OrderByDescending(c => c.EndDate)
+                    .Select(c => (DateOnly?)c.EndDate)
+                    .FirstOrDefault(),
                 AvailabilityPercent = item.Employee.AvailabilityPercent,
                 WorkloadPercent = item.Employee.WorkloadPercent,
                 ActiveAssignmentCount = item.Employee.Assignments.Count(assignment =>

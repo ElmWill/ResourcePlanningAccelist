@@ -16,4 +16,10 @@ public class CreateProjectRequest : IRequest<CreateProjectResponse>
     public DateOnly StartDate { get; set; }
 
     public DateOnly EndDate { get; set; }
+
+    public string? Notes { get; set; }
+
+    public List<Guid> SkillIds { get; set; } = new();
+
+    public List<CreateProjectResourceRequirementItem> ResourceRequirements { get; set; } = new();
 }

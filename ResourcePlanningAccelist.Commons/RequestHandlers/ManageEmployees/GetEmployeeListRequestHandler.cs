@@ -50,7 +50,12 @@ public class GetEmployeeListRequestHandler : IRequestHandler<GetEmployeeListRequ
                 Status = employee.Status.ToString(),
                 HireDate = employee.HireDate,
                 Skills = employee.EmployeeSkills.Select(es => es.Skill.Name).ToList(),
-                Assignments = employee.Assignments.Where(a => a.Status == AssignmentStatus.Approved || a.Status == AssignmentStatus.Accepted).Select(a => new AssignmentListItemResponse
+                ContractEndDate = employee.Contracts
+                    .Where(c => c.Status == ContractStatus.Active)
+                    .OrderByDescending(c => c.EndDate)
+                    .Select(c => c.EndDate)
+                    .FirstOrDefault(),
+                Assignments = employee.Assignments.Where(a => a.Status == AssignmentStatus.Approved || a.Status == AssignmentStatus.Accepted || a.Status == AssignmentStatus.InProgress || a.Status == AssignmentStatus.Completed).Select(a => new AssignmentListItemResponse
                 {
                     Id = a.Id,
                     ProjectId = a.ProjectId,

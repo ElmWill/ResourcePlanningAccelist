@@ -6,7 +6,22 @@ public class GetHRDashboardSummaryResponse
 
     public int TotalEmployeeCount { get; set; }
 
+    public int ExpiringContractsCount { get; set; }
+
+    public int ActiveHiringRequestsCount { get; set; }
+
     public List<HRRecentValidationRequestResponse> RecentRequests { get; set; } = [];
+
+    public List<HRExpiringContractResponse> ExpiringContracts { get; set; } = [];
+}
+
+public class HRExpiringContractResponse
+{
+    public Guid EmployeeId { get; set; }
+
+    public string EmployeeName { get; set; } = string.Empty;
+
+    public DateOnly? EndDate { get; set; }
 }
 
 public class HRRecentValidationRequestResponse

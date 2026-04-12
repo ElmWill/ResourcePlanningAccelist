@@ -23,4 +23,5 @@ public class EmployeeListItemResponse
     public string Status { get; set; } = string.Empty;
     public DateOnly? HireDate { get; set; }
     public List<string> Skills { get; set; } = new();
+    public DateOnly? ContractEndDate { get; set; }
 }

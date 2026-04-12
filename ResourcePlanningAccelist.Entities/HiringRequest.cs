@@ -1,4 +1,6 @@
+using System;
 using System.ComponentModel.DataAnnotations;
+using ResourcePlanningAccelist.Constants;
 using ResourcePlanningAccelist.Entities.Abstractions;
 
 namespace ResourcePlanningAccelist.Entities;
@@ -15,16 +17,10 @@ public class HiringRequest : AuditableEntity
     [StringLength(1000)]
     public string Details { get; set; } = string.Empty;
 
-    public HiringRequestStatus Status { get; set; } = HiringRequestStatus.InProgress;
+    public HiringRequestStatus Status { get; set; } = HiringRequestStatus.Sourcing;
 
     public DateTimeOffset? StartedAt { get; set; }
 
     public DateTimeOffset? CompletedAt { get; set; }
 }
 
-public enum HiringRequestStatus
-{
-    InProgress,
-    Completed,
-    Cancelled
-}

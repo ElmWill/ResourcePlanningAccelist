@@ -1,3 +1,4 @@
+using System;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ResourcePlanningAccelist.Constants;
@@ -43,11 +44,35 @@ public class GetHRDashboardSummaryRequestHandler : IRequestHandler<GetHRDashboar
             })
             .ToListAsync(cancellationToken);
 
+        // Calculate Active Hiring Requests
+        var activeHiringCount = await _dbContext.HiringRequests
+            .AsNoTracking()
+            .CountAsync(item => item.Status != HiringRequestStatus.Completed && item.Status != HiringRequestStatus.Cancelled, cancellationToken);
+
+        // Calculate Expiring Contracts (within 31 days)
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var endThreshold = today.AddDays(31);
+
+        var expiringContracts = await _dbContext.Employees
+            .AsNoTracking()
+            .SelectMany(e => e.Contracts)
+            .Where(c => c.Status == ContractStatus.Active && c.EndDate != null && c.EndDate >= today && c.EndDate <= endThreshold)
+            .Select(c => new HRExpiringContractResponse
+            {
+                EmployeeId = c.EmployeeId,
+                EmployeeName = c.Employee.User.FullName,
+                EndDate = c.EndDate
+            })
+            .ToListAsync(cancellationToken);
+
         return new GetHRDashboardSummaryResponse
         {
             PendingValidationsCount = pendingCount,
             TotalEmployeeCount = totalEmployees,
-            RecentRequests = recentRequests
+            ActiveHiringRequestsCount = activeHiringCount,
+            ExpiringContractsCount = expiringContracts.Count,
+            RecentRequests = recentRequests,
+            ExpiringContracts = expiringContracts
         };
     }
 }

@@ -58,4 +58,34 @@ public class HumanResourceController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("hiring/list")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
+    public async Task<ActionResult<GetHiringListResponse>> GetHiringList(
+        CancellationToken cancellationToken)
+    {
+        var request = new GetHiringListRequest();
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("hiring/update-stage")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
+    public async Task<ActionResult<UpdateHiringStageResponse>> UpdateHiringStage(
+        [FromBody] UpdateHiringStageRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("rehire")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
+    public async Task<ActionResult<RehireEmployeeResponse>> RehireEmployee(
+        [FromBody] RehireEmployeeRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

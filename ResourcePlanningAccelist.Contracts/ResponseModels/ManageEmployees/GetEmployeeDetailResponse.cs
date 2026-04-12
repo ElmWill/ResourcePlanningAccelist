@@ -1,3 +1,5 @@
+using ResourcePlanningAccelist.Contracts.ResponseModels.ManageAssignments;
+
 namespace ResourcePlanningAccelist.Contracts.ResponseModels.ManageEmployees;
 
 public class GetEmployeeDetailResponse
@@ -17,6 +19,9 @@ public class GetEmployeeDetailResponse
     public decimal AvailabilityPercent { get; set; }
 
     public decimal WorkloadPercent { get; set; }
+    public decimal AssignedHours { get; set; }
     public string Phone { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public List<AssignmentListItemResponse> Assignments { get; set; } = new();
+    public DateOnly? ContractEndDate { get; set; }
 }

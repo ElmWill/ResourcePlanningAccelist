@@ -38,6 +38,7 @@ public class UpdateAssignmentStatusRequestHandler : IRequestHandler<UpdateAssign
             assignment.RejectedAt = DateTimeOffset.UtcNow;
         }
 
+        await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, assignment.EmployeeId, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new UpdateAssignmentStatusResponse

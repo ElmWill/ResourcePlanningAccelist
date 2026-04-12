@@ -69,4 +69,14 @@ public class AssignmentsController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPost("split-workload")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    public async Task<ActionResult<SplitAssignmentWorkloadResponse>> SplitWorkload(
+        [FromBody] SplitAssignmentWorkloadRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

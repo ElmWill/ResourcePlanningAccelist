@@ -91,4 +91,13 @@ public class EmployeesController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPost("recalculate-workloads")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
+    public async Task<ActionResult<RecalculateEmployeeWorkloadsResponse>> RecalculateWorkloads(
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new RecalculateEmployeeWorkloadsRequest(), cancellationToken);
+        return Ok(result);
+    }
 }

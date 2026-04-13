@@ -28,6 +28,30 @@ public class UpdateProjectStatusRequestHandler : IRequestHandler<UpdateProjectSt
 
         project.Status = parsedStatus;
 
+        if (parsedStatus == ProjectStatus.Approved && request.PmOwnerUserId.HasValue)
+        {
+            var pmOwnerSourceId = request.PmOwnerUserId.Value;
+
+            var pmUserId = await _dbContext.Employees
+                .AsNoTracking()
+                .Where(item => item.Id == pmOwnerSourceId)
+                .Select(item => item.UserId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (pmUserId != Guid.Empty)
+            {
+                project.PmOwnerUserId = pmUserId;
+            }
+            else if (await _dbContext.Users.AsNoTracking().AnyAsync(item => item.Id == pmOwnerSourceId, cancellationToken))
+            {
+                project.PmOwnerUserId = pmOwnerSourceId;
+            }
+            else
+            {
+                throw new KeyNotFoundException("Recommended PM not found.");
+            }
+        }
+
         if (parsedStatus == ProjectStatus.Rejected)
         {
             project.RejectedAt = DateTimeOffset.UtcNow;

@@ -61,6 +61,7 @@ public class GetAssignmentListRequestHandler : IRequestHandler<GetAssignmentList
                 EmployeeName = item.Employee.User.FullName,
                 RoleName = item.RoleName,
                 Status = item.Status.ToString(),
+                ProjectStatus = item.Project.Status.ToString(),
                 AllocationPercent = item.AllocationPercent,
                 StartDate = item.StartDate,
                 EndDate = item.EndDate,

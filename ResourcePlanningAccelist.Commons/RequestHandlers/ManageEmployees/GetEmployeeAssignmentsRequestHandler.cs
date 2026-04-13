@@ -58,6 +58,7 @@ public class GetEmployeeAssignmentsRequestHandler : IRequestHandler<GetEmployeeA
                 EmployeeName = item.Employee.User.FullName,
                 RoleName = item.RoleName,
                 Status = item.Status.ToString(),
+                ProjectStatus = item.Project.Status.ToString(),
                 AllocationPercent = item.AllocationPercent
             })
             .ToListAsync(cancellationToken);

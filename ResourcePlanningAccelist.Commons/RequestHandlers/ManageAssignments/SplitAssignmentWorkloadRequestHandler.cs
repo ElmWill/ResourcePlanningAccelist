@@ -43,7 +43,7 @@ public class SplitAssignmentWorkloadRequestHandler : IRequestHandler<SplitAssign
 
         var targetEmployee = await _dbContext.Employees
             .AsNoTracking()
-            .Include(employee => employee.Contract)
+            .Include(employee => employee.Contracts)
             .FirstOrDefaultAsync(employee => employee.Id == request.ToEmployeeId, cancellationToken)
             ?? throw new InvalidOperationException("Target employee was not found.");
 
@@ -52,7 +52,7 @@ public class SplitAssignmentWorkloadRequestHandler : IRequestHandler<SplitAssign
             throw new InvalidOperationException("Target employee is not active and cannot accept split workload.");
         }
 
-        if (targetEmployee.Contract is not null && targetEmployee.Contract.Status is not ContractStatus.Active and not ContractStatus.Extended)
+        if (targetEmployee.Contracts.Any() && targetEmployee.Contracts.All(contract => contract.Status is not ContractStatus.Active and not ContractStatus.Extended))
         {
             throw new InvalidOperationException("Target employee contract is not active for workload split.");
         }

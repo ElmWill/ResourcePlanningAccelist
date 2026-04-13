@@ -31,7 +31,9 @@ public class GetProjectManagerProjectOverviewRequestHandler : IRequestHandler<Ge
                 item.RiskLevel,
                 item.StartDate,
                 item.EndDate,
-                TeamSize = item.Assignments.Select(assignment => assignment.EmployeeId).Distinct().Count(),
+                TeamSize = item.TotalRequiredResources > 0
+                    ? item.TotalRequiredResources
+                    : item.Assignments.Select(assignment => assignment.EmployeeId).Distinct().Count(),
                 TotalAssignments = item.Assignments.Count(),
                 CompletedAssignments = item.Assignments.Count(assignment => assignment.Status == AssignmentStatus.Completed)
             })

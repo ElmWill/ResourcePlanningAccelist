@@ -98,4 +98,5 @@ public class GeneralManagerController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
 }

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ResourcePlanningAccelist.Constants;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageGeneralManagerDecisions;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageGeneralManagerDecisions;
 using ResourcePlanningAccelist.Entities;
@@ -41,9 +42,31 @@ public class GetGeneralManagerDecisionListRequestHandler : IRequestHandler<GetGe
             })
             .ToListAsync(cancellationToken);
 
+        // Fetch pending assignments and map them as "ProjectAssignment" decisions
+        var pendingAssignments = await _dbContext.Assignments
+            .AsNoTracking()
+            .Where(item => item.Status == AssignmentStatus.Pending)
+            .Include(item => item.Project)
+            .Include(item => item.Employee.User)
+            .Select(item => new GeneralManagerDecisionListItemResponse
+            {
+                Id = item.Id,
+                Type = DecisionType.ProjectAssignment.ToString(),
+                Title = $"Resource Allocation: {item.Employee.User.FullName}",
+                Details = $"Request to assign {item.Employee.User.FullName} to {item.Project.Name} as {item.RoleName} ({item.AllocationPercent}%).",
+                ProjectName = item.Project.Name,
+                AffectedEmployees = new List<string> { item.Employee.User.FullName },
+                Deadline = null,
+                SubmittedAt = item.CreatedAt,
+                Status = DecisionStatus.Pending.ToString()
+            })
+            .ToListAsync(cancellationToken);
+
+        decisions.AddRange(pendingAssignments);
+
         return new GetGeneralManagerDecisionListResponse
         {
-            Decisions = decisions
+            Decisions = decisions.OrderByDescending(d => d.SubmittedAt).ToList()
         };
     }
 }

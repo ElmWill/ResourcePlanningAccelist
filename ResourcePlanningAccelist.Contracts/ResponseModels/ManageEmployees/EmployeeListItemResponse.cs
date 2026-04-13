@@ -1,3 +1,5 @@
+using ResourcePlanningAccelist.Contracts.ResponseModels.ManageAssignments;
+
 namespace ResourcePlanningAccelist.Contracts.ResponseModels.ManageEmployees;
 
 public class EmployeeListItemResponse
@@ -19,6 +21,7 @@ public class EmployeeListItemResponse
     public List<string> Skills { get; set; } = new();
 
     public decimal AssignedHours { get; set; }
-
+    public string Phone { get; set; } = string.Empty;
+    public List<AssignmentListItemResponse> Assignments { get; set; } = new();
     public string Status { get; set; } = string.Empty;
 }

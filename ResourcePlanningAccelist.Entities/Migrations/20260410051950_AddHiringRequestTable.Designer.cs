@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ResourcePlanningAccelist.Entities;
@@ -11,9 +12,11 @@ using ResourcePlanningAccelist.Entities;
 namespace ResourcePlanningAccelist.Entities.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260410051950_AddHiringRequestTable")]
+    partial class AddHiringRequestTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -355,7 +358,8 @@ namespace ResourcePlanningAccelist.Entities.Migrations
 
                     b.HasIndex("CurrentProjectId");
 
-                    b.HasIndex("EmployeeId");
+                    b.HasIndex("EmployeeId")
+                        .IsUnique();
 
                     b.ToTable("EmployeeContracts");
                 });
@@ -1117,8 +1121,8 @@ namespace ResourcePlanningAccelist.Entities.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ResourcePlanningAccelist.Entities.Employee", "Employee")
-                        .WithMany("Contracts")
-                        .HasForeignKey("EmployeeId")
+                        .WithOne("Contract")
+                        .HasForeignKey("ResourcePlanningAccelist.Entities.EmployeeContract", "EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1386,7 +1390,7 @@ namespace ResourcePlanningAccelist.Entities.Migrations
                 {
                     b.Navigation("Assignments");
 
-                    b.Navigation("Contracts");
+                    b.Navigation("Contract");
 
                     b.Navigation("EmployeeSkills");
                 });

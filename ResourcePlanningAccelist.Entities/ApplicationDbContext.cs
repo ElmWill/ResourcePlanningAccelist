@@ -49,6 +49,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    public DbSet<HiringRequest> HiringRequests => Set<HiringRequest>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -105,6 +107,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<GmDecision>().Property(entity => entity.DecisionType).HasConversion<string>();
         modelBuilder.Entity<GmDecision>().Property(entity => entity.Status).HasConversion<string>();
         modelBuilder.Entity<Notification>().Property(entity => entity.Type).HasConversion<string>();
+        modelBuilder.Entity<HiringRequest>().Property(entity => entity.Status).HasConversion<string>();
         modelBuilder.Entity<ProjectReview>().Property(entity => entity.Decision).HasConversion<string>();
         modelBuilder.Entity<ProjectTimelineTask>().Property(entity => entity.Status).HasConversion<string>();
     }
@@ -194,9 +197,9 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(item => item.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(item => item.Contract)
+            entity.HasMany(item => item.Contracts)
                 .WithOne(item => item.Employee)
-                .HasForeignKey<EmployeeContract>(item => item.EmployeeId)
+                .HasForeignKey(item => item.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -289,6 +292,14 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(item => item.DecisionId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.Entity<HiringRequest>(entity =>
+        {
+            entity.HasOne(item => item.GmDecision)
+                .WithOne()
+                .HasForeignKey<HiringRequest>(item => item.GmDecisionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 
     private static void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -314,7 +325,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Assignment>().HasIndex(entity => entity.EmployeeId);
         modelBuilder.Entity<Assignment>().HasIndex(entity => entity.Status);
         modelBuilder.Entity<AssignmentReview>().HasIndex(entity => entity.Status);
-        modelBuilder.Entity<EmployeeContract>().HasIndex(entity => entity.EmployeeId).IsUnique();
+        modelBuilder.Entity<EmployeeContract>().HasIndex(entity => entity.EmployeeId);
         modelBuilder.Entity<GmDecision>().HasIndex(entity => entity.Status);
         modelBuilder.Entity<GmDecision>().HasIndex(entity => entity.DecisionType);
         modelBuilder.Entity<Notification>().HasIndex(entity => new { entity.UserId, entity.IsRead });

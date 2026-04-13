@@ -79,7 +79,8 @@ public enum DecisionType
 {
     ExtendContract,
     TerminateContract,
-    HireResource
+    HireResource,
+    ProjectAssignment
 }
 
 public enum DecisionStatus
@@ -116,7 +117,8 @@ public enum EmploymentStatus
 {
     Active,
     Inactive,
-    Resigned
+    Resigned,
+    Terminated
 }
 
 public enum TimelineTaskStatus

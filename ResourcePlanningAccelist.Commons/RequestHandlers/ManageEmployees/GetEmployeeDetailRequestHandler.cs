@@ -34,11 +34,7 @@ public class GetEmployeeDetailRequestHandler : IRequestHandler<GetEmployeeDetail
                 Department = item.Department != null ? item.Department.Name : null,
                 AvailabilityPercent = item.AvailabilityPercent,
                 WorkloadPercent = item.WorkloadPercent,
-                Skills = item.EmployeeSkills
-                    .OrderBy(skill => skill.IsPrimary ? 0 : 1)
-                    .ThenBy(skill => skill.Skill.Name)
-                    .Select(skill => skill.Skill.Name)
-                    .ToList(),
+                Phone = item.Phone,
                 Status = item.Status.ToString()
             })
             .FirstOrDefaultAsync(cancellationToken);

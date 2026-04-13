@@ -26,6 +26,7 @@ public class GetGeneralManagerWorkforceSummaryRequestHandler : IRequestHandler<G
             .Include(item => item.Contract)
             .Include(item => item.EmployeeSkills)
                 .ThenInclude(item => item.Skill)
+            .Include(item => item.Contracts)
             .AsQueryable();
 
         if (request.DepartmentId.HasValue)
@@ -36,7 +37,7 @@ public class GetGeneralManagerWorkforceSummaryRequestHandler : IRequestHandler<G
         var employees = await query.ToListAsync(cancellationToken);
         var activeEmployees = employees
             .Where(item => item.Status == EmploymentStatus.Active)
-            .Where(item => item.Contract == null || item.Contract.Status is ContractStatus.Active or ContractStatus.Extended)
+            .Where(item => !item.Contracts.Any() || item.Contracts.Any(c => c.Status is ContractStatus.Active or ContractStatus.Extended))
             .ToList();
 
         var topSkillLimit = request.TopSkillLimit ?? 10;

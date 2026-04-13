@@ -42,5 +42,5 @@ public class Employee : AuditableEntity
 
     public virtual ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
 
-    public virtual EmployeeContract? Contract { get; set; }
+    public virtual ICollection<EmployeeContract> Contracts { get; set; } = new List<EmployeeContract>();
 }

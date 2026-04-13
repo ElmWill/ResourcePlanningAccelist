@@ -28,4 +28,34 @@ public class HumanResourceController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPost("execute-decision")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
+    public async Task<ActionResult<ExecuteGmDecisionResponse>> ExecuteDecision(
+        [FromBody] ExecuteGmDecisionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("execute-contract")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
+    public async Task<ActionResult<ExecuteContractActionResponse>> ExecuteContract(
+        [FromBody] ExecuteContractActionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("start-hiring")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
+    public async Task<ActionResult<StartHiringResponse>> StartHiring(
+        [FromBody] StartHiringRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

@@ -47,6 +47,47 @@ public class UpdateEmployeeHandler : IRequestHandler<UpdateEmployeeRequest, Upda
         }
         employee.HireDate = request.HireDate;
 
+        // Update Skills (Sync)
+        if (request.Skills != null)
+        {
+            var currentSkills = await _dbContext.EmployeeSkills
+                .Include(es => es.Skill)
+                .Where(es => es.EmployeeId == employee.Id)
+                .ToListAsync(cancellationToken);
+
+            // Remove skills not in the request
+            foreach (var current in currentSkills)
+            {
+                if (!request.Skills.Contains(current.Skill.Name))
+                {
+                    _dbContext.EmployeeSkills.Remove(current);
+                }
+            }
+
+            // Add skills from request that aren't already there
+            foreach (var skillName in request.Skills)
+            {
+                if (!currentSkills.Any(cs => cs.Skill.Name == skillName))
+                {
+                    var skill = await _dbContext.Skills
+                        .FirstOrDefaultAsync(s => s.Name == skillName, cancellationToken);
+
+                    if (skill == null)
+                    {
+                        skill = new Skill { Name = skillName, Category = SkillCategory.Technical };
+                        _dbContext.Skills.Add(skill);
+                    }
+
+                    _dbContext.EmployeeSkills.Add(new EmployeeSkill
+                    {
+                        EmployeeId = employee.Id,
+                        Skill = skill,
+                        Proficiency = 3
+                    });
+                }
+            }
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new UpdateEmployeeResponse

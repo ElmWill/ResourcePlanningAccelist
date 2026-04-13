@@ -35,6 +35,9 @@ public class GmDecision : AuditableEntity
     public DateTimeOffset? ExecutedAt { get; set; }
 
     public DateTimeOffset? ClarificationRequestedAt { get; set; }
+    
+    [StringLength(4000)]
+    public string? ClarificationReason { get; set; }
 
     public virtual ICollection<GmDecisionEmployee> AffectedEmployees { get; set; } = new List<GmDecisionEmployee>();
 }

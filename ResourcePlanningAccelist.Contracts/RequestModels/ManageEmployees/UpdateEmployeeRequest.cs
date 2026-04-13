@@ -22,4 +22,5 @@ public class UpdateEmployeeRequest : IRequest<UpdateEmployeeResponse>
     public string Status { get; set; } = "Active";
 
     public DateOnly? HireDate { get; set; }
+    public List<string> Skills { get; set; } = new();
 }

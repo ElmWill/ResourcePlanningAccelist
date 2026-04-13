@@ -1,9 +1,11 @@
+using System;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ResourcePlanningAccelist.Constants;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageHumanResources;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageHumanResources;
 using ResourcePlanningAccelist.Entities;
+using ResourcePlanningAccelist.Commons.Helpers;
 
 namespace ResourcePlanningAccelist.Commons.RequestHandlers.ManageHumanResources;
 
@@ -46,6 +48,25 @@ public class ExecuteGmDecisionRequestHandler : IRequestHandler<ExecuteGmDecision
         {
             assignment.Status = AssignmentStatus.Approved;
             assignment.AcceptedAt = DateTimeOffset.UtcNow;
+
+            // Notify Employee
+            _dbContext.Notifications.Add(new Notification
+            {
+                UserId = await _dbContext.Employees.Where(e => e.Id == assignment.EmployeeId).Select(e => e.UserId).FirstAsync(cancellationToken),
+                Type = NotificationType.Assignment,
+                Title = "New Project Assignment",
+                Message = $"You have been assigned to project '{await _dbContext.Projects.Where(p => p.Id == assignment.ProjectId).Select(p => p.Name).FirstAsync(cancellationToken)}'. Please review and accept.",
+                CreatedAt = DateTimeOffset.UtcNow,
+                IsRead = false,
+                SourceEntityType = "Assignment",
+                SourceEntityId = assignment.Id
+            });
+
+            // SAVE FIRST so the recalculation query can see the new status
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // Recalculate Workload
+            await WorkloadHelper.RecalculateEmployeeWorkloadAsync(assignment.EmployeeId, _dbContext, cancellationToken);
             
             await _dbContext.SaveChangesAsync(cancellationToken);
 

@@ -65,14 +65,39 @@ public class GetHRDashboardSummaryRequestHandler : IRequestHandler<GetHRDashboar
             })
             .ToListAsync(cancellationToken);
 
+        // GM Decisions tracking
+        var gmDecisionsQuery = _dbContext.GmDecisions.AsNoTracking();
+
+        var pendingGmDecisionsCount = await gmDecisionsQuery
+            .CountAsync(item => item.Status == DecisionStatus.Executed, cancellationToken);
+
+        var pendingClarificationsCount = await gmDecisionsQuery
+            .CountAsync(item => item.Status == DecisionStatus.ClarificationRequested, cancellationToken);
+            
+        var recentGmDecisions = await gmDecisionsQuery
+            .OrderByDescending(item => item.SubmittedAt)
+            .Take(5)
+            .Select(item => new RecentGmDecisionResponse
+            {
+                Id = item.Id,
+                Type = item.DecisionType.ToString(),
+                Details = item.Details,
+                Date = item.SubmittedAt,
+                Status = item.Status.ToString()
+            })
+            .ToListAsync(cancellationToken);
+
         return new GetHRDashboardSummaryResponse
         {
             PendingValidationsCount = pendingCount,
             TotalEmployeeCount = totalEmployees,
             ActiveHiringRequestsCount = activeHiringCount,
             ExpiringContractsCount = expiringContracts.Count,
+            PendingGmDecisionsCount = pendingGmDecisionsCount,
+            PendingClarificationsCount = pendingClarificationsCount,
             RecentRequests = recentRequests,
-            ExpiringContracts = expiringContracts
+            ExpiringContracts = expiringContracts,
+            RecentGmDecisions = recentGmDecisions
         };
     }
 }

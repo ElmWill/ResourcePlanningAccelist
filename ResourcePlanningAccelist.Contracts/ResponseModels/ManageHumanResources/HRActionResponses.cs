@@ -29,3 +29,9 @@ public class RehireEmployeeResponse
     public bool Success { get; set; }
     public string? Message { get; set; }
 }
+
+public class RequestClarificationResponse
+{
+    public bool Success { get; set; }
+    public string? Message { get; set; }
+}

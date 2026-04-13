@@ -88,4 +88,25 @@ public class HumanResourceController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPost("decision/{id}/clarify")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
+    public async Task<ActionResult<RequestClarificationResponse>> RequestClarification(
+        string id,
+        [FromBody] RequestClarificationRequestBody body,
+        CancellationToken cancellationToken)
+    {
+        var request = new RequestClarificationRequest
+        {
+            DecisionId = Guid.Parse(id),
+            Reason = body.Reason
+        };
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+}
+
+public class RequestClarificationRequestBody
+{
+    public string Reason { get; set; } = string.Empty;
 }

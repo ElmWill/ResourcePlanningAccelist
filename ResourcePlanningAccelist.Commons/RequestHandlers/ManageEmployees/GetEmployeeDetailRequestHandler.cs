@@ -25,6 +25,8 @@ public class GetEmployeeDetailRequestHandler : IRequestHandler<GetEmployeeDetail
             .Include(item => item.Department)
             .Include(item => item.Assignments)
                 .ThenInclude(a => a.Project)
+            .Include(item => item.EmployeeSkills)
+                .ThenInclude(item => item.Skill)
             .Where(item => item.Id == request.EmployeeId)
             .Select(item => new GetEmployeeDetailResponse
             {

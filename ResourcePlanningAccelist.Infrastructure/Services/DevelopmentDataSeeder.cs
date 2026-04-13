@@ -12,16 +12,191 @@ internal static class DevelopmentDataSeeder
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        if (await dbContext.Users.AnyAsync(cancellationToken) ||
-            await dbContext.Projects.AnyAsync(cancellationToken) ||
-            await dbContext.Employees.AnyAsync(cancellationToken))
+        var now = DateTimeOffset.UtcNow;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+
+        var hasExistingData = await dbContext.Users.AnyAsync(cancellationToken) ||
+                              await dbContext.Projects.AnyAsync(cancellationToken) ||
+                              await dbContext.Employees.AnyAsync(cancellationToken);
+
+        if (hasExistingData)
         {
-            logger.LogInformation("Skipping development seed because data already exists.");
+            logger.LogInformation("Existing data found. Running supplemental employee top-up only.");
+            await SeedSupplementalEmployeesForExistingDataAsync();
+            await dbContext.SaveChangesAsync(cancellationToken);
             return;
         }
 
-        var now = DateTimeOffset.UtcNow;
-        var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+        async Task SeedSupplementalEmployeesForExistingDataAsync()
+        {
+            var engineeringDepartmentExisting = await dbContext.Departments.FirstOrDefaultAsync(d => d.Name == "Engineering", cancellationToken);
+            var productDepartmentExisting = await dbContext.Departments.FirstOrDefaultAsync(d => d.Name == "Product", cancellationToken);
+            var marketingDepartmentExisting = await dbContext.Departments.FirstOrDefaultAsync(d => d.Name == "Marketing", cancellationToken);
+            var hrDepartmentExisting = await dbContext.Departments.FirstOrDefaultAsync(d => d.Name == "Human Resources", cancellationToken);
+
+            if (engineeringDepartmentExisting is null ||
+                productDepartmentExisting is null ||
+                marketingDepartmentExisting is null ||
+                hrDepartmentExisting is null)
+            {
+                logger.LogWarning("Skipping supplemental employee top-up because one or more departments were not found.");
+                return;
+            }
+
+            var nodeSkillExisting = await dbContext.Skills.FirstOrDefaultAsync(s => s.Name == "Node.js", cancellationToken);
+            var reactSkillExisting = await dbContext.Skills.FirstOrDefaultAsync(s => s.Name == "React", cancellationToken);
+            var productManagementSkillExisting = await dbContext.Skills.FirstOrDefaultAsync(s => s.Name == "Product Management", cancellationToken);
+            var analyticsSkillExisting = await dbContext.Skills.FirstOrDefaultAsync(s => s.Name == "Analytics", cancellationToken);
+            var agileSkillExisting = await dbContext.Skills.FirstOrDefaultAsync(s => s.Name == "Agile", cancellationToken);
+
+            if (nodeSkillExisting is null ||
+                reactSkillExisting is null ||
+                productManagementSkillExisting is null ||
+                analyticsSkillExisting is null ||
+                agileSkillExisting is null)
+            {
+                logger.LogWarning("Skipping supplemental employee top-up because one or more skills were not found.");
+                return;
+            }
+
+            static WorkloadStatus ResolveExistingWorkloadState(int workloadPercent)
+            {
+                if (workloadPercent <= 40)
+                {
+                    return WorkloadStatus.Available;
+                }
+
+                if (workloadPercent <= 70)
+                {
+                    return WorkloadStatus.Moderate;
+                }
+
+                if (workloadPercent <= 100)
+                {
+                    return WorkloadStatus.Busy;
+                }
+
+                return WorkloadStatus.Overloaded;
+            }
+
+            async Task TopUpDepartmentAsync(
+                Department department,
+                string emailPrefix,
+                string namePrefix,
+                string jobTitle,
+                Skill primarySkill,
+                Skill secondarySkill,
+                int targetCount)
+            {
+                var existingCount = await dbContext.Employees.CountAsync(e => e.DepartmentId == department.Id, cancellationToken);
+                var required = Math.Max(0, targetCount - existingCount);
+                var created = 0;
+                var candidateSequence = existingCount + 1;
+
+                while (created < required)
+                {
+                    var email = $"{emailPrefix}.staff{candidateSequence:00}@accelist.local";
+                    candidateSequence++;
+
+                    if (await dbContext.Users.AnyAsync(u => u.Email == email, cancellationToken))
+                    {
+                        continue;
+                    }
+
+                    var workloadPercent = 28 + ((candidateSequence * 9) % 56);
+                    var availabilityPercent = Math.Max(0, 100 - workloadPercent);
+                    var assignedHours = Math.Round((decimal)workloadPercent / 100m * 8m, 1);
+
+                    var user = new AppUser
+                    {
+                        Email = email,
+                        FullName = $"{namePrefix} Staff {candidateSequence:00}",
+                        Role = UserRole.Employee,
+                        Department = department,
+                        IsActive = true
+                    };
+
+                    var employee = new Employee
+                    {
+                        User = user,
+                        Department = department,
+                        JobTitle = jobTitle,
+                        Status = EmploymentStatus.Active,
+                        AvailabilityPercent = availabilityPercent,
+                        WorkloadPercent = workloadPercent,
+                        WorkloadState = ResolveExistingWorkloadState(workloadPercent),
+                        AssignedHours = assignedHours,
+                        HireDate = today.AddMonths(-(6 + candidateSequence))
+                    };
+
+                    dbContext.Users.Add(user);
+                    dbContext.Employees.Add(employee);
+                    dbContext.EmployeeSkills.AddRange(
+                        new EmployeeSkill
+                        {
+                            Employee = employee,
+                            Skill = primarySkill,
+                            Proficiency = 3 + (candidateSequence % 3),
+                            IsPrimary = true
+                        },
+                        new EmployeeSkill
+                        {
+                            Employee = employee,
+                            Skill = secondarySkill,
+                            Proficiency = 2 + (candidateSequence % 3),
+                            IsPrimary = false
+                        });
+
+                    dbContext.EmployeeContracts.Add(
+                        new EmployeeContract
+                        {
+                            Employee = employee,
+                            StartDate = today.AddMonths(-(4 + candidateSequence)),
+                            EndDate = today.AddMonths(8 + (candidateSequence % 5)),
+                            Status = ContractStatus.Active,
+                            Notes = $"Supplemental seeded employee for {department.Name} load testing"
+                        });
+
+                    created++;
+                }
+            }
+
+            await TopUpDepartmentAsync(
+                engineeringDepartmentExisting,
+                "engineering",
+                "Engineering",
+                "Software Engineer",
+                nodeSkillExisting,
+                reactSkillExisting,
+                targetCount: 10);
+
+            await TopUpDepartmentAsync(
+                productDepartmentExisting,
+                "product",
+                "Product",
+                "Product Specialist",
+                productManagementSkillExisting,
+                analyticsSkillExisting,
+                targetCount: 10);
+
+            await TopUpDepartmentAsync(
+                marketingDepartmentExisting,
+                "marketing",
+                "Marketing",
+                "Marketing Specialist",
+                analyticsSkillExisting,
+                agileSkillExisting,
+                targetCount: 10);
+
+            await TopUpDepartmentAsync(
+                hrDepartmentExisting,
+                "hr",
+                "HR",
+                "HR Specialist",
+                agileSkillExisting,
+                productManagementSkillExisting,
+                targetCount: 10);
+        }
 
         var engineeringDepartment = new Department
         {
@@ -357,6 +532,139 @@ internal static class DevelopmentDataSeeder
                 Status = ContractStatus.Active,
                 Notes = "Requirement analysis and acceptance support"
             });
+
+        static WorkloadStatus ResolveWorkloadState(int workloadPercent)
+        {
+            if (workloadPercent <= 40)
+            {
+                return WorkloadStatus.Available;
+            }
+
+            if (workloadPercent <= 70)
+            {
+                return WorkloadStatus.Moderate;
+            }
+
+            if (workloadPercent <= 100)
+            {
+                return WorkloadStatus.Busy;
+            }
+
+            return WorkloadStatus.Overloaded;
+        }
+
+        void SeedSupplementalDepartmentEmployees(
+            Department department,
+            string emailPrefix,
+            string namePrefix,
+            string primaryJobTitle,
+            Skill primarySkill,
+            Skill secondarySkill,
+            int existingCount,
+            int targetCount)
+        {
+            var required = Math.Max(0, targetCount - existingCount);
+
+            for (var i = 0; i < required; i++)
+            {
+                var sequence = existingCount + i + 1;
+                var workloadPercent = 28 + ((sequence * 9) % 56);
+                var availabilityPercent = Math.Max(0, 100 - workloadPercent);
+                var assignedHours = Math.Round((decimal)workloadPercent / 100m * 8m, 1);
+
+                var user = new AppUser
+                {
+                    Email = $"{emailPrefix}.staff{sequence:00}@accelist.local",
+                    FullName = $"{namePrefix} Staff {sequence:00}",
+                    Role = UserRole.Employee,
+                    Department = department,
+                    IsActive = true
+                };
+
+                var employee = new Employee
+                {
+                    User = user,
+                    Department = department,
+                    JobTitle = primaryJobTitle,
+                    Status = EmploymentStatus.Active,
+                    AvailabilityPercent = availabilityPercent,
+                    WorkloadPercent = workloadPercent,
+                    WorkloadState = ResolveWorkloadState(workloadPercent),
+                    AssignedHours = assignedHours,
+                    HireDate = today.AddMonths(-(6 + sequence))
+                };
+
+                dbContext.Users.Add(user);
+                dbContext.Employees.Add(employee);
+
+                dbContext.EmployeeSkills.AddRange(
+                    new EmployeeSkill
+                    {
+                        Employee = employee,
+                        Skill = primarySkill,
+                        Proficiency = 3 + (sequence % 3),
+                        IsPrimary = true
+                    },
+                    new EmployeeSkill
+                    {
+                        Employee = employee,
+                        Skill = secondarySkill,
+                        Proficiency = 2 + (sequence % 3),
+                        IsPrimary = false
+                    });
+
+                dbContext.EmployeeContracts.Add(
+                    new EmployeeContract
+                    {
+                        Employee = employee,
+                        StartDate = today.AddMonths(-(4 + sequence)),
+                        EndDate = today.AddMonths(8 + (sequence % 5)),
+                        Status = ContractStatus.Active,
+                        Notes = $"Supplemental seeded employee for {department.Name} load testing"
+                    });
+            }
+        }
+
+        // Ensure each department has at least 10 employees for richer conflict and workload testing.
+        SeedSupplementalDepartmentEmployees(
+            engineeringDepartment,
+            "engineering",
+            "Engineering",
+            "Software Engineer",
+            nodeSkill,
+            reactSkill,
+            existingCount: 5,
+            targetCount: 10);
+
+        SeedSupplementalDepartmentEmployees(
+            productDepartment,
+            "product",
+            "Product",
+            "Product Specialist",
+            productManagementSkill,
+            analyticsSkill,
+            existingCount: 2,
+            targetCount: 10);
+
+        SeedSupplementalDepartmentEmployees(
+            marketingDepartment,
+            "marketing",
+            "Marketing",
+            "Marketing Specialist",
+            analyticsSkill,
+            agileSkill,
+            existingCount: 0,
+            targetCount: 10);
+
+        SeedSupplementalDepartmentEmployees(
+            hrDepartment,
+            "hr",
+            "HR",
+            "HR Specialist",
+            agileSkill,
+            productManagementSkill,
+            existingCount: 0,
+            targetCount: 10);
 
         var historicalProject = new Project
         {

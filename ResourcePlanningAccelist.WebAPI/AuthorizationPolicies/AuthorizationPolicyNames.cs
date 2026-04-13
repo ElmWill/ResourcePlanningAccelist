@@ -15,5 +15,7 @@ public static class AuthorizationPolicyNames
 
     public const string HrOrGm = "HrOrGm";
 
+    public const string PmHrOrGm = "PmHrOrGm";
+
     public const string ProjectReadAccess = "ProjectReadAccess";
 }

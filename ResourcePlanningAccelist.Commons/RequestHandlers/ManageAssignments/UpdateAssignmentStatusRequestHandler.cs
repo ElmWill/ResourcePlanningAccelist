@@ -42,9 +42,7 @@ public class UpdateAssignmentStatusRequestHandler : IRequestHandler<UpdateAssign
         // SAVE FIRST so the recalculation query can see the new status
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // Trigger Recalculation
-        await WorkloadHelper.RecalculateEmployeeWorkloadAsync(assignment.EmployeeId, _dbContext, cancellationToken);
-
+        await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, assignment.EmployeeId, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new UpdateAssignmentStatusResponse

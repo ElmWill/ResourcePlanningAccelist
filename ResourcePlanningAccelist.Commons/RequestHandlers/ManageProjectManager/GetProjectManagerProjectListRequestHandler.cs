@@ -19,6 +19,8 @@ public class GetProjectManagerProjectListRequestHandler : IRequestHandler<GetPro
 
     public async Task<GetProjectManagerProjectListResponse> Handle(GetProjectManagerProjectListRequest request, CancellationToken cancellationToken)
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
         var pageNumber = Math.Max(request.PageNumber ?? PaginationDefaults.PageNumber, PaginationDefaults.PageNumber);
         var requestedPageSize = request.PageSize ?? PaginationDefaults.PageSize;
         var pageSize = Math.Clamp(requestedPageSize, 1, PaginationDefaults.MaxPageSize);
@@ -45,11 +47,17 @@ public class GetProjectManagerProjectListRequestHandler : IRequestHandler<GetPro
                 ProjectId = item.Id,
                 Name = item.Name,
                 ClientName = item.ClientName,
-                Status = item.RiskLevel == ProjectRiskLevel.High || (item.Status == ProjectStatus.InProgress && item.ProgressPercent < 20)
-                    ? "delayed"
-                    : item.RiskLevel == ProjectRiskLevel.Medium && item.Status == ProjectStatus.InProgress
-                        ? "at-risk"
-                        : "on-track",
+                Status = item.Status == ProjectStatus.Completed
+                    ? "completed"
+                    : item.Status == ProjectStatus.Cancelled
+                        ? "cancelled"
+                        : (item.EndDate < today && item.ProgressPercent < 100) ||
+                          item.RiskLevel == ProjectRiskLevel.High ||
+                          (item.Status == ProjectStatus.InProgress && item.ProgressPercent < 20)
+                            ? "delayed"
+                            : item.RiskLevel == ProjectRiskLevel.Medium && item.Status == ProjectStatus.InProgress
+                                ? "at-risk"
+                                : "on-track",
                 ProgressPercent = item.ProgressPercent,
                 StartDate = item.StartDate,
                 EndDate = item.EndDate,

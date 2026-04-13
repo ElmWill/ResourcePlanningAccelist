@@ -54,7 +54,6 @@ public class GetEmployeeListRequestHandler : IRequestHandler<GetEmployeeListRequ
                 Phone = employee.Phone,
                 Status = employee.Status.ToString(),
                 HireDate = employee.HireDate,
-                Skills = employee.EmployeeSkills.Select(es => es.Skill.Name).ToList(),
                 ContractEndDate = employee.Contracts
                     .Where(c => c.Status == ContractStatus.Active)
                     .OrderByDescending(c => c.EndDate)

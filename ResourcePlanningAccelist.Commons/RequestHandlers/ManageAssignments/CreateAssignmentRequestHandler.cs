@@ -14,6 +14,7 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
     private static readonly AssignmentStatus[] ActiveAssignmentStatuses =
     {
         AssignmentStatus.Pending,
+        AssignmentStatus.GmApproved,
         AssignmentStatus.Approved,
         AssignmentStatus.Accepted,
         AssignmentStatus.InProgress,

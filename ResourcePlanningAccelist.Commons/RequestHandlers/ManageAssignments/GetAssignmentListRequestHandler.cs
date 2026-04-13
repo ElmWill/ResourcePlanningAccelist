@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ResourcePlanningAccelist.Commons.Constants;
+using ResourcePlanningAccelist.Constants;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageAssignments;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageAssignments;
 using ResourcePlanningAccelist.Entities;
@@ -40,9 +41,9 @@ public class GetAssignmentListRequestHandler : IRequestHandler<GetAssignmentList
             query = query.Where(item => item.EmployeeId == request.EmployeeId.Value);
         }
 
-        if (!string.IsNullOrWhiteSpace(request.Status))
+        if (!string.IsNullOrWhiteSpace(request.Status) && Enum.TryParse<AssignmentStatus>(request.Status, true, out var statusEnum))
         {
-            query = query.Where(item => item.Status.ToString() == request.Status);
+            query = query.Where(item => item.Status == statusEnum);
         }
 
         var totalCount = await query.CountAsync(cancellationToken);

@@ -21,7 +21,7 @@ public class GetHRDashboardSummaryRequestHandler : IRequestHandler<GetHRDashboar
     {
         var pendingAssignmentsQuery = _dbContext.Assignments
             .AsNoTracking()
-            .Where(item => item.Status == AssignmentStatus.Pending);
+            .Where(item => item.Status == AssignmentStatus.GmApproved);
 
         var pendingCount = await pendingAssignmentsQuery.CountAsync(cancellationToken);
 

@@ -42,10 +42,10 @@ public class GetGeneralManagerDecisionListRequestHandler : IRequestHandler<GetGe
             })
             .ToListAsync(cancellationToken);
 
-        // Fetch pending assignments and map them as "ProjectAssignment" decisions
-        var pendingAssignments = await _dbContext.Assignments
+        // Fetch GM-approved assignments and map them as "ProjectAssignment" decisions for HR visibility
+        var approvedAssignments = await _dbContext.Assignments
             .AsNoTracking()
-            .Where(item => item.Status == AssignmentStatus.Pending)
+            .Where(item => item.Status == AssignmentStatus.GmApproved)
             .Include(item => item.Project)
             .Include(item => item.Employee.User)
             .Select(item => new GeneralManagerDecisionListItemResponse
@@ -58,11 +58,11 @@ public class GetGeneralManagerDecisionListRequestHandler : IRequestHandler<GetGe
                 AffectedEmployees = new List<string> { item.Employee.User.FullName },
                 Deadline = null,
                 SubmittedAt = item.CreatedAt,
-                Status = DecisionStatus.Pending.ToString()
+                Status = item.Status.ToString()
             })
             .ToListAsync(cancellationToken);
 
-        decisions.AddRange(pendingAssignments);
+        decisions.AddRange(approvedAssignments);
 
         return new GetGeneralManagerDecisionListResponse
         {

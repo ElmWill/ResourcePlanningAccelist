@@ -1,3 +1,4 @@
+using System;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ResourcePlanningAccelist.Constants;
@@ -41,7 +42,7 @@ public class StartHiringRequestHandler : IRequestHandler<StartHiringRequest, Sta
             GmDecisionId = decision.Id,
             JobTitle = decision.Title.Contains("Hire") ? decision.Title.Replace("Hire", "").Trim() : "New Resource",
             Details = decision.Details,
-            Status = HiringRequestStatus.InProgress,
+            Status = HiringRequestStatus.Sourcing,
             StartedAt = DateTimeOffset.UtcNow
         };
         _dbContext.HiringRequests.Add(hiringRequest);

@@ -127,3 +127,12 @@ public enum TimelineTaskStatus
     InProgress,
     Completed
 }
+
+public enum HiringRequestStatus
+{
+    Sourcing,
+    Interviewing,
+    Offering,
+    Completed,
+    Cancelled
+}

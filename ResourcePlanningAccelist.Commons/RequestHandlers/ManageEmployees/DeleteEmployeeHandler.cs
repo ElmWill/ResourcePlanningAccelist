@@ -49,6 +49,9 @@ public class DeleteEmployeeHandler : IRequestHandler<DeleteEmployeeRequest, Dele
         {
             contract.Status = ContractStatus.Terminated;
             contract.EndDate = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            contract.UpdatedAt = DateTime.UtcNow;
+            contract.UpdatedBy = "73101e8c-98a8-489d-ae4d-2e549eec1d85"; //hardcoded ID
+            contract.Notes = "Contract is cut short by HR";
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

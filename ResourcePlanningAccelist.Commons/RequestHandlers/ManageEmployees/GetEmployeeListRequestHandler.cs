@@ -25,6 +25,8 @@ public class GetEmployeeListRequestHandler : IRequestHandler<GetEmployeeListRequ
             .Include(employee => employee.Department)
             .Include(employee => employee.Assignments)
                 .ThenInclude(a => a.Project)
+            .Include(employee => employee.EmployeeSkills)
+                .ThenInclude(es => es.Skill)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Department))
@@ -51,7 +53,13 @@ public class GetEmployeeListRequestHandler : IRequestHandler<GetEmployeeListRequ
                 AssignedHours = employee.AssignedHours,
                 Phone = employee.Phone,
                 Status = employee.Status.ToString(),
-                Assignments = employee.Assignments.Where(a => a.Status == AssignmentStatus.Approved || a.Status == AssignmentStatus.Accepted).Select(a => new AssignmentListItemResponse
+                HireDate = employee.HireDate,
+                ContractEndDate = employee.Contracts
+                    .Where(c => c.Status == ContractStatus.Active)
+                    .OrderByDescending(c => c.EndDate)
+                    .Select(c => c.EndDate)
+                    .FirstOrDefault(),
+                Assignments = employee.Assignments.Where(a => a.Status == AssignmentStatus.Approved || a.Status == AssignmentStatus.Accepted || a.Status == AssignmentStatus.InProgress || a.Status == AssignmentStatus.Completed).Select(a => new AssignmentListItemResponse
                 {
                     Id = a.Id,
                     ProjectId = a.ProjectId,

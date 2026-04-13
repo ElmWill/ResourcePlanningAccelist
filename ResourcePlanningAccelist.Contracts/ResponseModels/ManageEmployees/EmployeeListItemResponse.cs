@@ -24,4 +24,6 @@ public class EmployeeListItemResponse
     public string Phone { get; set; } = string.Empty;
     public List<AssignmentListItemResponse> Assignments { get; set; } = new();
     public string Status { get; set; } = string.Empty;
+    public DateOnly? HireDate { get; set; }
+    public DateOnly? ContractEndDate { get; set; }
 }

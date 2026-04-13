@@ -18,5 +18,7 @@ public class GetEmployeeDetailResponse
 
     public decimal WorkloadPercent { get; set; }
 
+    public List<string> Skills { get; set; } = new();
+
     public string Status { get; set; } = string.Empty;
 }

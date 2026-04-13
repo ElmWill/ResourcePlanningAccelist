@@ -111,6 +111,14 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
                 })
                 .ToDictionaryAsync(item => item.EmployeeId, item => Math.Max(0m, item.AllocationPercent), cancellationToken);
 
+            var sameProjectEmployeeIds = await _dbContext.Assignments
+                .AsNoTracking()
+                .Where(assignment => assignment.ProjectId == request.ProjectId)
+                .Where(assignment => ActiveAssignmentStatuses.Contains(assignment.Status))
+                .Select(assignment => assignment.EmployeeId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
             var candidateEmployees = await _dbContext.Employees
                 .AsNoTracking()
                 .Include(employee => employee.User)
@@ -123,6 +131,7 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
 
             candidateEmployees = candidateEmployees
                 .Where(employee => employee.Contract == null || employee.Contract.Status is ContractStatus.Active or ContractStatus.Extended)
+                .Where(employee => !sameProjectEmployeeIds.Contains(employee.Id))
                 .Where(employee =>
                 {
                     var existingAllocation = allocationByEmployee.TryGetValue(employee.Id, out var allocation)

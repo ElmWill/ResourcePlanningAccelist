@@ -28,7 +28,9 @@ internal static class AssignmentWorkloadUpdater
         var allocationPercent = await dbContext.Assignments
             .Where(item => item.EmployeeId == employeeId)
             .Where(item => ActiveAssignmentStatuses.Contains(item.Status))
-            .SumAsync(item => item.AllocationPercent, cancellationToken);
+            .GroupBy(item => item.ProjectId)
+            .Select(group => Math.Min(100m, group.Sum(item => item.AllocationPercent)))
+            .SumAsync(cancellationToken);
 
         var normalizedWorkload = Math.Max(0m, allocationPercent);
         employee.WorkloadPercent = normalizedWorkload;

@@ -21,6 +21,8 @@ public class GetEmployeeDetailRequestHandler : IRequestHandler<GetEmployeeDetail
             .AsNoTracking()
             .Include(item => item.User)
             .Include(item => item.Department)
+            .Include(item => item.EmployeeSkills)
+                .ThenInclude(item => item.Skill)
             .Where(item => item.Id == request.EmployeeId)
             .Select(item => new GetEmployeeDetailResponse
             {
@@ -32,6 +34,11 @@ public class GetEmployeeDetailRequestHandler : IRequestHandler<GetEmployeeDetail
                 Department = item.Department != null ? item.Department.Name : null,
                 AvailabilityPercent = item.AvailabilityPercent,
                 WorkloadPercent = item.WorkloadPercent,
+                Skills = item.EmployeeSkills
+                    .OrderBy(skill => skill.IsPrimary ? 0 : 1)
+                    .ThenBy(skill => skill.Skill.Name)
+                    .Select(skill => skill.Skill.Name)
+                    .ToList(),
                 Status = item.Status.ToString()
             })
             .FirstOrDefaultAsync(cancellationToken);

@@ -15,6 +15,9 @@ public class EmployeeListItemResponse
     public decimal AvailabilityPercent { get; set; }
 
     public decimal WorkloadPercent { get; set; }
+
+    public List<string> Skills { get; set; } = new();
+
     public decimal AssignedHours { get; set; }
 
     public string Status { get; set; } = string.Empty;

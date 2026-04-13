@@ -39,6 +39,11 @@ public class GetEmployeeListRequestHandler : IRequestHandler<GetEmployeeListRequ
                 Department = employee.Department != null ? employee.Department.Name : null,
                 AvailabilityPercent = employee.AvailabilityPercent,
                 WorkloadPercent = employee.WorkloadPercent,
+                Skills = employee.EmployeeSkills
+                    .OrderBy(item => item.IsPrimary ? 0 : 1)
+                    .ThenBy(item => item.Skill.Name)
+                    .Select(item => item.Skill.Name)
+                    .ToList(),
                 AssignedHours = employee.AssignedHours,
                 Status = employee.Status.ToString()
             })

@@ -12,6 +12,14 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
 {
     private readonly ApplicationDbContext _dbContext;
 
+    private static readonly AssignmentStatus[] ActiveAssignmentStatuses =
+    {
+        AssignmentStatus.Pending,
+        AssignmentStatus.Approved,
+        AssignmentStatus.Accepted,
+        AssignmentStatus.InProgress,
+    };
+
     public GetGeneralManagerProjectPredictionRequestHandler(ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -44,6 +52,21 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             .Where(item => item.Contract == null || item.Contract.Status is ContractStatus.Active or ContractStatus.Extended)
             .ToList();
 
+        var timelineWorkloadByEmployee = await _dbContext.Assignments
+            .AsNoTracking()
+            .Where(item => ActiveAssignmentStatuses.Contains(item.Status))
+            .Where(item => item.StartDate <= project.EndDate && item.EndDate >= project.StartDate)
+            .GroupBy(item => item.EmployeeId)
+            .Select(group => new
+            {
+                EmployeeId = group.Key,
+                AllocationPercent = group.Sum(item => item.AllocationPercent)
+            })
+            .ToDictionaryAsync(
+                item => item.EmployeeId,
+                item => Math.Max(0m, item.AllocationPercent),
+                cancellationToken);
+
         var historicalAssignments = await _dbContext.Assignments
             .AsNoTracking()
             .Where(item => item.Status == AssignmentStatus.Completed)
@@ -65,12 +88,16 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
         var requirementResponses = new List<GeneralManagerProjectRequirementPredictionResponse>();
         var weightedCoverageTotal = 0m;
         var weightedQuantityTotal = 0m;
+        var averageTimelineWorkloadPercent = employees.Count == 0
+            ? 0m
+            : employees.Average(item => timelineWorkloadByEmployee.TryGetValue(item.Id, out var workload) ? workload : 0m);
 
         foreach (var requirement in project.ResourceRequirements.OrderBy(item => item.SortOrder))
         {
             var requirementResponse = BuildRequirementPrediction(
                 requirement,
                 employees,
+                timelineWorkloadByEmployee,
                 historicalSkillExposure,
                 completedAssignmentsByEmployee,
                 completedAssignmentsByRole,
@@ -85,14 +112,18 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             ? weightedCoverageTotal / weightedQuantityTotal
             : 0m;
 
+        var staffingRiskScore = Math.Clamp((100m - overallCoverageScore) * 0.7m + averageTimelineWorkloadPercent * 0.3m, 0m, 100m);
+        var activeCandidateCount = employees.Count(item =>
+            Math.Max(0m, 100m - (timelineWorkloadByEmployee.TryGetValue(item.Id, out var workload) ? workload : 0m)) > 0m);
+
         return new GetGeneralManagerProjectPredictionResponse
         {
             ProjectId = project.Id,
             ProjectName = project.Name,
             OverallCoverageScore = RoundScore(overallCoverageScore),
-            StaffingRiskScore = RoundScore(100m - overallCoverageScore),
+            StaffingRiskScore = RoundScore(staffingRiskScore),
             RequiredResourceCount = project.ResourceRequirements.Sum(item => item.Quantity),
-            CandidatePoolSize = employees.Count,
+            CandidatePoolSize = activeCandidateCount,
             CandidateLimit = candidateLimit,
             Requirements = requirementResponses
         };
@@ -101,6 +132,7 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
     private static GeneralManagerProjectRequirementPredictionResponse BuildRequirementPrediction(
         ProjectResourceRequirement requirement,
         IReadOnlyCollection<Employee> employees,
+        IReadOnlyDictionary<Guid, decimal> timelineWorkloadByEmployee,
         IReadOnlyDictionary<(Guid EmployeeId, Guid SkillId), decimal> historicalSkillExposure,
         IReadOnlyDictionary<Guid, int> completedAssignmentsByEmployee,
         IReadOnlyDictionary<(Guid EmployeeId, string RoleName), int> completedAssignmentsByRole,
@@ -116,6 +148,7 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
                 employee,
                 requirement.RoleName,
                 requiredSkillItems,
+                timelineWorkloadByEmployee.TryGetValue(employee.Id, out var workload) ? workload : 0m,
                 historicalSkillExposure,
                 completedAssignmentsByEmployee,
                 completedAssignmentsByRole))
@@ -124,9 +157,9 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             .ToList();
 
         var recommendedCandidates = candidateResponses.Take(candidateLimit).ToList();
-        var bestCandidateScore = recommendedCandidates.Count > 0 ? recommendedCandidates[0].FitScore : 0m;
-        var coverageScore = recommendedCandidates.Count > 0
-            ? recommendedCandidates.Take(requirement.Quantity).Average(item => item.FitScore)
+        var bestCandidateScore = candidateResponses.Count > 0 ? candidateResponses[0].FitScore : 0m;
+        var coverageScore = requirement.Quantity > 0
+            ? candidateResponses.Take(requirement.Quantity).Sum(item => item.FitScore) / requirement.Quantity
             : 0m;
 
         return new GeneralManagerProjectRequirementPredictionResponse
@@ -146,6 +179,7 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
         Employee employee,
         string requirementRoleName,
         IReadOnlyCollection<Skill> requiredSkills,
+        decimal timelineWorkloadPercent,
         IReadOnlyDictionary<(Guid EmployeeId, Guid SkillId), decimal> historicalSkillExposure,
         IReadOnlyDictionary<Guid, int> completedAssignmentsByEmployee,
         IReadOnlyDictionary<(Guid EmployeeId, string RoleName), int> completedAssignmentsByRole)
@@ -193,8 +227,11 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             }
         }
 
+        var normalizedWorkloadPercent = Math.Max(0m, timelineWorkloadPercent);
+        var normalizedAvailabilityPercent = Math.Max(0m, 100m - normalizedWorkloadPercent);
+
         var skillScore = totalSkillScore / totalSkillCount;
-        var capacityScore = Math.Max(0m, 1m - (employee.WorkloadPercent / 100m)) * (employee.AvailabilityPercent / 100m);
+        var capacityScore = normalizedAvailabilityPercent / 100m;
         var completedAssignments = completedAssignmentsByEmployee.TryGetValue(employee.Id, out var completedCount)
             ? completedCount
             : 0;
@@ -229,8 +266,8 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             CapacityScore = RoundScore(capacityScore * 100m),
             HistoryScore = RoundScore(historyScore * 100m),
             RoleExperienceScore = RoundScore(roleExperienceScore * 100m),
-            AvailabilityPercent = employee.AvailabilityPercent,
-            WorkloadPercent = employee.WorkloadPercent,
+            AvailabilityPercent = RoundScore(normalizedAvailabilityPercent),
+            WorkloadPercent = RoundScore(normalizedWorkloadPercent),
             MatchedSkills = matchedSkills.Distinct().OrderBy(item => item).ToList(),
             InferredSkills = inferredSkills.Distinct().OrderBy(item => item).ToList(),
             MissingSkills = missingSkills.Distinct().OrderBy(item => item).ToList(),
@@ -248,10 +285,20 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             var ageDays = Math.Max((DateTimeOffset.UtcNow - referenceDate).TotalDays, 0);
             var decay = 1m / (1m + (decimal)ageDays / GeneralManagerPredictionConstants.HistoricalDecayWindowDays);
 
-            var requiredSkills = assignment.Project.ResourceRequirements
+            var roleMatchedSkills = assignment.Project.ResourceRequirements
+                .Where(item => string.Equals(item.RoleName, assignment.RoleName, StringComparison.OrdinalIgnoreCase))
                 .SelectMany(item => item.RequiredSkills)
                 .Select(item => item.Skill)
-                .DistinctBy(item => item.Id);
+                .DistinctBy(item => item.Id)
+                .ToList();
+
+            var requiredSkills = roleMatchedSkills.Count > 0
+                ? roleMatchedSkills
+                : assignment.Project.ResourceRequirements
+                    .SelectMany(item => item.RequiredSkills)
+                    .Select(item => item.Skill)
+                    .DistinctBy(item => item.Id)
+                    .ToList();
 
             foreach (var skill in requiredSkills)
             {

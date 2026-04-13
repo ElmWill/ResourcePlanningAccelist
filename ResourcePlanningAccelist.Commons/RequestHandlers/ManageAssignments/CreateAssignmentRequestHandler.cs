@@ -11,6 +11,47 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
 {
     private readonly ApplicationDbContext _dbContext;
 
+    private static readonly AssignmentStatus[] ActiveAssignmentStatuses =
+    {
+        AssignmentStatus.Pending,
+        AssignmentStatus.Approved,
+        AssignmentStatus.Accepted,
+        AssignmentStatus.InProgress,
+    };
+
+    private static readonly HashSet<string> RoleStopWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "and",
+        "the",
+        "for",
+        "with",
+        "resource",
+        "staff",
+    };
+
+    private static readonly Dictionary<string, string[]> DepartmentHintMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["backend"] = ["engineering", "technology", "it"],
+        ["frontend"] = ["engineering", "technology", "it"],
+        ["fullstack"] = ["engineering", "technology", "it"],
+        ["developer"] = ["engineering", "technology", "it"],
+        ["engineer"] = ["engineering", "technology", "it"],
+        ["qa"] = ["engineering", "technology", "it"],
+        ["tester"] = ["engineering", "technology", "it"],
+        ["devops"] = ["engineering", "technology", "it"],
+        ["sre"] = ["engineering", "technology", "it"],
+        ["data"] = ["engineering", "technology", "it"],
+        ["design"] = ["design", "product"],
+        ["ui"] = ["design", "product"],
+        ["ux"] = ["design", "product"],
+        ["marketing"] = ["marketing"],
+        ["sales"] = ["sales", "business"],
+        ["hr"] = ["hr", "human resource"],
+        ["recruit"] = ["hr", "human resource"],
+        ["finance"] = ["finance", "accounting"],
+        ["account"] = ["finance", "accounting"],
+    };
+
     public CreateAssignmentRequestHandler(ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -35,41 +76,147 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
                 .Distinct()
                 .ToList();
 
+            var roleKeywords = request.RoleName
+                .Split([' ', '-', '/', '(', ')', ',', '.'], StringSplitOptions.RemoveEmptyEntries)
+                .Select(keyword => keyword.Trim().ToLowerInvariant())
+                .Where(keyword => keyword.Length >= 3)
+                .Where(keyword => !RoleStopWords.Contains(keyword))
+                .Distinct()
+                .ToList();
+
+            var requiredSkillKeywords = requiredSkills
+                .SelectMany(skill => skill.Split([' ', '-', '/', '(', ')', ',', '.'], StringSplitOptions.RemoveEmptyEntries))
+                .Select(keyword => keyword.Trim().ToLowerInvariant())
+                .Where(keyword => keyword.Length >= 3)
+                .Where(keyword => !RoleStopWords.Contains(keyword))
+                .Distinct()
+                .ToList();
+
+            var departmentHints = roleKeywords
+                .Concat(requiredSkillKeywords)
+                .Distinct()
+                .SelectMany(keyword => DepartmentHintMap.TryGetValue(keyword, out var hints) ? hints : [])
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var allocationByEmployee = await _dbContext.Assignments
+                .AsNoTracking()
+                .Where(assignment => ActiveAssignmentStatuses.Contains(assignment.Status))
+                .Where(assignment => assignment.StartDate <= request.EndDate && assignment.EndDate >= request.StartDate)
+                .GroupBy(assignment => assignment.EmployeeId)
+                .Select(group => new
+                {
+                    EmployeeId = group.Key,
+                    AllocationPercent = group.Sum(assignment => assignment.AllocationPercent)
+                })
+                .ToDictionaryAsync(item => item.EmployeeId, item => Math.Max(0m, item.AllocationPercent), cancellationToken);
+
             var candidateEmployees = await _dbContext.Employees
                 .AsNoTracking()
                 .Include(employee => employee.User)
                 .Include(employee => employee.EmployeeSkills)
                     .ThenInclude(employeeSkill => employeeSkill.Skill)
+                .Include(employee => employee.Department)
+                .Include(employee => employee.Contract)
                 .Where(employee => employee.Status == EmploymentStatus.Active)
                 .ToListAsync(cancellationToken);
 
-            var rankedCandidates = candidateEmployees
+            candidateEmployees = candidateEmployees
+                .Where(employee => employee.Contract == null || employee.Contract.Status is ContractStatus.Active or ContractStatus.Extended)
+                .Where(employee =>
+                {
+                    var existingAllocation = allocationByEmployee.TryGetValue(employee.Id, out var allocation)
+                        ? allocation
+                        : 0m;
+                    var remainingCapacity = Math.Max(0m, 100m - existingAllocation);
+                    return remainingCapacity >= request.AllocationPercent;
+                })
+                .ToList();
+
+            var candidateScores = candidateEmployees
                 .Select(employee =>
                 {
+                    var existingAllocation = allocationByEmployee.TryGetValue(employee.Id, out var allocation)
+                        ? allocation
+                        : 0m;
+                    var remainingCapacity = Math.Max(0m, 100m - existingAllocation);
+
                     var normalizedEmployeeSkills = employee.EmployeeSkills
                         .Select(employeeSkill => employeeSkill.Skill.Name.ToLowerInvariant())
+                        .Append(employee.JobTitle.ToLowerInvariant())
+                        .Append(employee.Department?.Name?.ToLowerInvariant() ?? string.Empty)
+                        .Where(skill => !string.IsNullOrWhiteSpace(skill))
+                        .Distinct()
                         .ToList();
 
+                    var roleMatch = roleKeywords.Count == 0 || roleKeywords.Any(keyword =>
+                        employee.JobTitle.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                        normalizedEmployeeSkills.Any(employeeSkill => employeeSkill.Contains(keyword, StringComparison.OrdinalIgnoreCase)));
+
+                    var departmentName = employee.Department?.Name ?? string.Empty;
+                    var departmentMatch = departmentHints.Count == 0 || departmentHints.Any(hint =>
+                        departmentName.Contains(hint, StringComparison.OrdinalIgnoreCase));
+
                     var matchedSkillsCount = requiredSkills.Count(requiredSkill =>
-                        normalizedEmployeeSkills.Any(employeeSkill =>
-                            employeeSkill.Contains(requiredSkill) || requiredSkill.Contains(employeeSkill)));
+                    {
+                        var requiredTokens = requiredSkill
+                            .Split([' ', '-', '/', '(', ')', ',', '.'], StringSplitOptions.RemoveEmptyEntries)
+                            .Select(token => token.Trim())
+                            .Where(token => token.Length >= 3)
+                            .ToList();
+
+                        return normalizedEmployeeSkills.Any(employeeSkill =>
+                            employeeSkill.Equals(requiredSkill, StringComparison.OrdinalIgnoreCase) ||
+                            employeeSkill.Contains(requiredSkill, StringComparison.OrdinalIgnoreCase) ||
+                            (requiredTokens.Count > 0 && requiredTokens.All(token => employeeSkill.Contains(token, StringComparison.OrdinalIgnoreCase))));
+                    });
 
                     var skillCoverage = requiredSkills.Count == 0
                         ? 0
                         : (matchedSkillsCount / (decimal)requiredSkills.Count) * 100m;
 
-                    var score = skillCoverage + employee.AvailabilityPercent - employee.WorkloadPercent;
+                    var score = skillCoverage + remainingCapacity;
 
                     return new
                     {
                         EmployeeId = employee.Id,
                         Score = score,
                         MatchedSkillsCount = matchedSkillsCount,
+                        RoleMatch = roleMatch,
+                        DepartmentMatch = departmentMatch,
                     };
                 })
+                .ToList();
+
+            var rankedCandidates = candidateScores
+                .Where(candidate => candidate.RoleMatch)
+                .Where(candidate => requiredSkills.Count == 0 || candidate.MatchedSkillsCount > 0)
                 .OrderByDescending(candidate => candidate.MatchedSkillsCount)
                 .ThenByDescending(candidate => candidate.Score)
                 .ToList();
+
+            if (rankedCandidates.Count == 0)
+            {
+                rankedCandidates = candidateScores
+                    .Where(candidate => candidate.RoleMatch)
+                    .OrderByDescending(candidate => candidate.Score)
+                    .ToList();
+            }
+
+            if (rankedCandidates.Count == 0)
+            {
+                rankedCandidates = candidateScores
+                    .Where(candidate => candidate.DepartmentMatch)
+                    .OrderByDescending(candidate => candidate.Score)
+                    .ToList();
+            }
+
+            if (rankedCandidates.Count == 0)
+            {
+                rankedCandidates = candidateScores
+                    .OrderByDescending(candidate => candidate.Score)
+                    .ToList();
+            }
 
             var selectedCandidate = rankedCandidates.FirstOrDefault();
 

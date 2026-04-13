@@ -32,6 +32,19 @@ public class UpdateProjectStatusRequestHandler : IRequestHandler<UpdateProjectSt
         {
             project.RejectedAt = DateTimeOffset.UtcNow;
             project.RejectionReason = request.RejectionReason;
+
+            _dbContext.Notifications.Add(new Notification
+            {
+                UserId = project.CreatedByUserId,
+                Type = NotificationType.Alert,
+                Title = "Project draft rejected",
+                Message = string.IsNullOrWhiteSpace(request.RejectionReason)
+                    ? $"Your project '{project.Name}' was rejected by General Manager. Please revise and resubmit."
+                    : $"Your project '{project.Name}' was rejected by General Manager. Reason: {request.RejectionReason}",
+                IsRead = false,
+                SourceEntityType = nameof(Project),
+                SourceEntityId = project.Id
+            });
         }
 
         if (parsedStatus == ProjectStatus.Submitted)

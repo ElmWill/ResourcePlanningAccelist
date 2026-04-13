@@ -30,7 +30,7 @@ public class AssignmentsController : ControllerBase
     }
 
     [HttpGet("list")]
-    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    [Authorize(Policy = AuthorizationPolicyNames.PmHrOrGm)]
     public async Task<ActionResult<GetAssignmentListResponse>> List(
         [FromQuery] GetAssignmentListRequest request,
         CancellationToken cancellationToken)
@@ -40,7 +40,7 @@ public class AssignmentsController : ControllerBase
     }
 
     [HttpGet("{assignmentId:guid}")]
-    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    [Authorize(Policy = AuthorizationPolicyNames.PmHrOrGm)]
     public async Task<ActionResult<GetAssignmentDetailResponse>> Detail(
         Guid assignmentId,
         CancellationToken cancellationToken)
@@ -51,7 +51,7 @@ public class AssignmentsController : ControllerBase
     }
 
     [HttpPost("update-status")]
-    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    [Authorize(Policy = AuthorizationPolicyNames.PmHrOrGm)]
     public async Task<ActionResult<UpdateAssignmentStatusResponse>> UpdateStatus(
         [FromBody] UpdateAssignmentStatusRequest request,
         CancellationToken cancellationToken)
@@ -64,6 +64,16 @@ public class AssignmentsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
     public async Task<ActionResult<UpdateAssignmentProgressResponse>> UpdateProgress(
         [FromBody] UpdateAssignmentProgressRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("split-workload")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    public async Task<ActionResult<SplitAssignmentWorkloadResponse>> SplitWorkload(
+        [FromBody] SplitAssignmentWorkloadRequest request,
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(request, cancellationToken);

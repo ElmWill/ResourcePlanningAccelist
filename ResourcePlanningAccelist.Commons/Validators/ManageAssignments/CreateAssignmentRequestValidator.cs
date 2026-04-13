@@ -11,7 +11,7 @@ public class CreateAssignmentRequestValidator : AbstractValidator<CreateAssignme
             .NotEmpty();
 
         RuleFor(request => request.EmployeeId)
-            .NotEmpty();
+            .Must(employeeId => employeeId == Guid.Empty || employeeId != Guid.Empty);
 
         RuleFor(request => request.AssignedByUserId)
             .NotEmpty();
@@ -19,6 +19,14 @@ public class CreateAssignmentRequestValidator : AbstractValidator<CreateAssignme
         RuleFor(request => request.RoleName)
             .NotEmpty()
             .MaximumLength(200);
+
+        RuleForEach(request => request.RequiredSkills)
+            .NotEmpty()
+            .MaximumLength(100);
+
+        RuleFor(request => request.AdditionalNeeds)
+            .MaximumLength(1000)
+            .When(request => !string.IsNullOrWhiteSpace(request.AdditionalNeeds));
 
         RuleFor(request => request.AllocationPercent)
             .GreaterThan(0)

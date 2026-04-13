@@ -2,6 +2,8 @@ namespace ResourcePlanningAccelist.Contracts.ResponseModels.ManageProjectManager
 
 public class ProjectManagerTeamMemberItemResponse
 {
+    public Guid AssignmentId { get; set; }
+
     public Guid EmployeeId { get; set; }
 
     public string FullName { get; set; } = string.Empty;
@@ -13,4 +15,12 @@ public class ProjectManagerTeamMemberItemResponse
     public decimal AllocationPercent { get; set; }
 
     public string AssignmentStatus { get; set; } = string.Empty;
+
+    public decimal AvailabilityPercent { get; set; }
+
+    public decimal WorkloadPercent { get; set; }
+
+    public decimal AssignedHours { get; set; }
+
+    public string EmployeeStatus { get; set; } = string.Empty;
 }

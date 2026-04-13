@@ -12,6 +12,14 @@ public class GetGeneralManagerProjectRiskRequestHandler : IRequestHandler<GetGen
 {
     private readonly ApplicationDbContext _dbContext;
 
+    private static readonly AssignmentStatus[] ActiveAssignmentStatuses =
+    {
+        AssignmentStatus.Pending,
+        AssignmentStatus.Approved,
+        AssignmentStatus.Accepted,
+        AssignmentStatus.InProgress,
+    };
+
     public GetGeneralManagerProjectRiskRequestHandler(ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -42,8 +50,26 @@ public class GetGeneralManagerProjectRiskRequestHandler : IRequestHandler<GetGen
             .Where(item => !item.Contracts.Any() || item.Contracts.Any(c => c.Status is ContractStatus.Active or ContractStatus.Extended))
             .ToList();
 
-        var activeCandidateCount = employees.Count;
-        var averageWorkloadPercent = activeCandidateCount == 0 ? 0m : employees.Average(item => item.WorkloadPercent);
+        var timelineWorkloadByEmployee = await _dbContext.Assignments
+            .AsNoTracking()
+            .Where(item => ActiveAssignmentStatuses.Contains(item.Status))
+            .Where(item => item.StartDate <= project.EndDate && item.EndDate >= project.StartDate)
+            .GroupBy(item => item.EmployeeId)
+            .Select(group => new
+            {
+                EmployeeId = group.Key,
+                AllocationPercent = group.Sum(item => item.AllocationPercent)
+            })
+            .ToDictionaryAsync(
+                item => item.EmployeeId,
+                item => Math.Max(0m, item.AllocationPercent),
+                cancellationToken);
+
+        var activeCandidateCount = employees.Count(item =>
+            Math.Max(0m, 100m - (timelineWorkloadByEmployee.TryGetValue(item.Id, out var workload) ? workload : 0m)) > 0m);
+        var averageWorkloadPercent = employees.Count == 0
+            ? 0m
+            : employees.Average(item => timelineWorkloadByEmployee.TryGetValue(item.Id, out var workload) ? workload : 0m);
 
         var totalRequiredResources = Math.Max(project.ResourceRequirements.Sum(item => item.Quantity), 1);
         var totalCoverage = 0m;
@@ -54,12 +80,20 @@ public class GetGeneralManagerProjectRiskRequestHandler : IRequestHandler<GetGen
         {
             var requiredSkills = requirement.RequiredSkills.Select(item => item.Skill).DistinctBy(item => item.Id).ToList();
             var candidateScores = employees
-                .Select(employee => CalculateRequirementScore(employee, requiredSkills))
+                .Select(employee =>
+                {
+                    var skillScore = CalculateRequirementScore(employee, requiredSkills);
+                    var workloadPercent = timelineWorkloadByEmployee.TryGetValue(employee.Id, out var workload) ? workload : 0m;
+                    var availabilityScore = Math.Max(0m, 100m - Math.Max(0m, workloadPercent)) / 100m;
+
+                    return (skillScore * 0.7m) + (availabilityScore * 0.3m);
+                })
                 .OrderByDescending(score => score)
-                .Take(candidateLimit)
                 .ToList();
 
-            var coverageScore = candidateScores.Count > 0 ? candidateScores.Average() : 0m;
+            var coverageScore = requirement.Quantity > 0
+                ? candidateScores.Take(requirement.Quantity).Sum() / requirement.Quantity
+                : 0m;
             var bestCandidateScore = candidateScores.Count > 0 ? candidateScores[0] : 0m;
             totalCoverage += coverageScore * requirement.Quantity;
 

@@ -21,6 +21,8 @@ public class GetEmployeeDetailRequestHandler : IRequestHandler<GetEmployeeDetail
             .AsNoTracking()
             .Include(item => item.User)
             .Include(item => item.Department)
+            .Include(item => item.EmployeeSkills)
+                .ThenInclude(item => item.Skill)
             .Where(item => item.Id == request.EmployeeId)
             .Select(item => new GetEmployeeDetailResponse
             {

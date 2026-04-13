@@ -16,6 +16,8 @@ public class AssignmentListItemResponse
 
     public string Status { get; set; } = string.Empty;
 
+    public string ProjectStatus { get; set; } = string.Empty;
+
     public decimal AllocationPercent { get; set; }
 
     public DateOnly StartDate { get; set; }
@@ -23,4 +25,6 @@ public class AssignmentListItemResponse
     public DateOnly EndDate { get; set; }
 
     public string RequestedByName { get; set; } = string.Empty;
+
+    public string? ConflictWarning { get; set; }
 }

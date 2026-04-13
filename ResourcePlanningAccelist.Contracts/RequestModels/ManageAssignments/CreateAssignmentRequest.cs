@@ -18,4 +18,8 @@ public class CreateAssignmentRequest : IRequest<CreateAssignmentResponse>
     public DateOnly EndDate { get; set; }
 
     public decimal AllocationPercent { get; set; }
+
+    public List<string> RequiredSkills { get; set; } = [];
+
+    public string? AdditionalNeeds { get; set; }
 }

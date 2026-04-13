@@ -23,6 +23,7 @@ public class GetGeneralManagerWorkforceSummaryRequestHandler : IRequestHandler<G
             .AsNoTracking()
             .Include(item => item.User)
             .Include(item => item.Department)
+            .Include(item => item.Contract)
             .Include(item => item.EmployeeSkills)
                 .ThenInclude(item => item.Skill)
             .Include(item => item.Contracts)
@@ -43,12 +44,17 @@ public class GetGeneralManagerWorkforceSummaryRequestHandler : IRequestHandler<G
 
         var skillCoverage = activeEmployees
             .SelectMany(item => item.EmployeeSkills)
-            .GroupBy(item => item.Skill)
+            .GroupBy(item => new
+            {
+                item.SkillId,
+                item.Skill.Name,
+                Category = item.Skill.Category.ToString()
+            })
             .Select(group => new GeneralManagerSkillCoverageResponse
             {
-                SkillId = group.Key.Id,
+                SkillId = group.Key.SkillId,
                 SkillName = group.Key.Name,
-                Category = group.Key.Category.ToString(),
+                Category = group.Key.Category,
                 EmployeeCount = group.Select(item => item.EmployeeId).Distinct().Count(),
                 CoveragePercent = activeEmployees.Count == 0
                     ? 0m
@@ -67,7 +73,7 @@ public class GetGeneralManagerWorkforceSummaryRequestHandler : IRequestHandler<G
             ? 0m
             : activeEmployees.Average(item => item.WorkloadPercent);
 
-        var overloadedCount = activeEmployees.Count(item => item.WorkloadPercent >= 80m);
+        var overloadedCount = activeEmployees.Count(item => item.WorkloadPercent > 100m);
 
         return new GetGeneralManagerWorkforceSummaryResponse
         {

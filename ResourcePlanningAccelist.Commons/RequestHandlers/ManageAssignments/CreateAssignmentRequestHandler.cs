@@ -125,12 +125,14 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
                 .Include(employee => employee.EmployeeSkills)
                     .ThenInclude(employeeSkill => employeeSkill.Skill)
                 .Include(employee => employee.Department)
-                .Include(employee => employee.Contract)
+                .Include(employee => employee.Contracts)
                 .Where(employee => employee.Status == EmploymentStatus.Active)
                 .ToListAsync(cancellationToken);
 
             candidateEmployees = candidateEmployees
-                .Where(employee => employee.Contract == null || employee.Contract.Status is ContractStatus.Active or ContractStatus.Extended)
+                .Where(employee =>
+                    !employee.Contracts.Any() ||
+                    employee.Contracts.Any(contract => contract.Status is ContractStatus.Active or ContractStatus.Extended))
                 .Where(employee => !sameProjectEmployeeIds.Contains(employee.Id))
                 .Where(employee =>
                 {

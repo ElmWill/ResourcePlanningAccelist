@@ -23,7 +23,6 @@ public class GetGeneralManagerWorkforceSummaryRequestHandler : IRequestHandler<G
             .AsNoTracking()
             .Include(item => item.User)
             .Include(item => item.Department)
-            .Include(item => item.Contract)
             .Include(item => item.EmployeeSkills)
                 .ThenInclude(item => item.Skill)
             .Include(item => item.Contracts)

@@ -142,4 +142,16 @@ public class ProjectsController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPut("{projectId:guid}")]
+    [Authorize(Policy = AuthorizationPolicyNames.MarketingOnly)]
+    public async Task<ActionResult<UpdateRevisedProjectResponse>> UpdateRevised(
+    Guid projectId,
+    [FromBody] UpdateRevisedProjectRequest request,
+    CancellationToken cancellationToken)
+    {
+        request.ProjectId = projectId;
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

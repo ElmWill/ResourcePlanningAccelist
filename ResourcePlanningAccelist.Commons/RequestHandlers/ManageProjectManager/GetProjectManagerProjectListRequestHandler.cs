@@ -63,7 +63,11 @@ public class GetProjectManagerProjectListRequestHandler : IRequestHandler<GetPro
                 EndDate = item.EndDate,
                 TeamSize = item.TotalRequiredResources > 0
                     ? item.TotalRequiredResources
-                    : item.Assignments.Select(assignment => assignment.EmployeeId).Distinct().Count()
+                    : item.Assignments
+                        .Where(assignment => assignment.Status != AssignmentStatus.Pending)
+                        .Select(assignment => assignment.EmployeeId)
+                        .Distinct()
+                        .Count()
             })
             .ToListAsync(cancellationToken);
 

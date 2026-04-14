@@ -59,9 +59,9 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
 
     public async Task<CreateAssignmentResponse> Handle(CreateAssignmentRequest request, CancellationToken cancellationToken)
     {
-        var projectExists = await _dbContext.Projects.AnyAsync(project => project.Id == request.ProjectId, cancellationToken);
+        var project = await _dbContext.Projects.FirstOrDefaultAsync(project => project.Id == request.ProjectId, cancellationToken);
 
-        if (!projectExists)
+        if (project is null)
         {
             throw new InvalidOperationException("Project does not exist.");
         }
@@ -222,18 +222,11 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
                     .ToList();
             }
 
-            if (rankedCandidates.Count == 0)
-            {
-                rankedCandidates = candidateScores
-                    .OrderByDescending(candidate => candidate.Score)
-                    .ToList();
-            }
-
             var selectedCandidate = rankedCandidates.FirstOrDefault();
 
             if (selectedCandidate is null)
             {
-                throw new InvalidOperationException("No employee available for assignment request.");
+                throw new InvalidOperationException("No suitable employee available for the requested role.");
             }
 
             targetEmployeeId = selectedCandidate.EmployeeId;
@@ -270,6 +263,19 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
             Status = AssignmentStatus.Pending,
             ConflictWarning = metadataNotes.Count == 0 ? null : string.Join(" | ", metadataNotes)
         };
+
+        var currentActiveDistinctMembers = await _dbContext.Assignments
+            .AsNoTracking()
+            .Where(item => item.ProjectId == request.ProjectId)
+            .Where(item => ActiveAssignmentStatuses.Contains(item.Status))
+            .Select(item => item.EmployeeId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        if (currentActiveDistinctMembers >= project.TotalRequiredResources)
+        {
+            project.TotalRequiredResources = currentActiveDistinctMembers + 1;
+        }
 
         _dbContext.Assignments.Add(assignment);
         await _dbContext.SaveChangesAsync(cancellationToken);

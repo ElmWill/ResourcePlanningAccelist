@@ -33,8 +33,12 @@ public class GetProjectManagerProjectOverviewRequestHandler : IRequestHandler<Ge
                 item.EndDate,
                 TeamSize = item.TotalRequiredResources > 0
                     ? item.TotalRequiredResources
-                    : item.Assignments.Select(assignment => assignment.EmployeeId).Distinct().Count(),
-                TotalAssignments = item.Assignments.Count(),
+                    : item.Assignments
+                        .Where(assignment => assignment.Status != AssignmentStatus.Pending)
+                        .Select(assignment => assignment.EmployeeId)
+                        .Distinct()
+                        .Count(),
+                TotalAssignments = item.Assignments.Count(assignment => assignment.Status != AssignmentStatus.Pending),
                 CompletedAssignments = item.Assignments.Count(assignment => assignment.Status == AssignmentStatus.Completed)
             })
             .FirstOrDefaultAsync(cancellationToken)

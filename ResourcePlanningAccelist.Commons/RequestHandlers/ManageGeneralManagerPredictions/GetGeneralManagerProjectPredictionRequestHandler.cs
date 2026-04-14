@@ -50,7 +50,21 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
 
         employees = employees
             .Where(item => !item.Contracts.Any() || item.Contracts.Any(c => c.Status is ContractStatus.Active or ContractStatus.Extended))
+            .Where(item => item.UserId != project.PmOwnerUserId)
             .ToList();
+
+        var assignedCountByRole = await _dbContext.Assignments
+            .AsNoTracking()
+            .Where(item => item.ProjectId == project.Id)
+            .Where(item => ActiveAssignmentStatuses.Contains(item.Status))
+            .Where(item => item.AllocationPercent > 0)
+            .GroupBy(item => item.RoleName.ToLower())
+            .Select(group => new
+            {
+                RoleName = group.Key,
+                AssignedCount = group.Select(item => item.EmployeeId).Distinct().Count()
+            })
+            .ToDictionaryAsync(item => item.RoleName, item => item.AssignedCount, cancellationToken);
 
         var timelineWorkloadByEmployee = await _dbContext.Assignments
             .AsNoTracking()
@@ -94,6 +108,10 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
 
         foreach (var requirement in project.ResourceRequirements.OrderBy(item => item.SortOrder))
         {
+            var assignedCountForRequirement = assignedCountByRole.TryGetValue(requirement.RoleName.ToLower(), out var assignedCount)
+                ? assignedCount
+                : 0;
+
             var requirementResponse = BuildRequirementPrediction(
                 requirement,
                 employees,
@@ -101,6 +119,7 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
                 historicalSkillExposure,
                 completedAssignmentsByEmployee,
                 completedAssignmentsByRole,
+                assignedCountForRequirement,
                 candidateLimit);
 
             requirementResponses.Add(requirementResponse);
@@ -136,8 +155,31 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
         IReadOnlyDictionary<(Guid EmployeeId, Guid SkillId), decimal> historicalSkillExposure,
         IReadOnlyDictionary<Guid, int> completedAssignmentsByEmployee,
         IReadOnlyDictionary<(Guid EmployeeId, string RoleName), int> completedAssignmentsByRole,
+        int assignedCountForRequirement,
         int candidateLimit)
     {
+        var fulfilledSlots = Math.Min(Math.Max(0, assignedCountForRequirement), requirement.Quantity);
+        var remainingSlots = Math.Max(0, requirement.Quantity - fulfilledSlots);
+
+        if (remainingSlots == 0)
+        {
+            return new GeneralManagerProjectRequirementPredictionResponse
+            {
+                RequirementId = requirement.Id,
+                RoleName = requirement.RoleName,
+                Quantity = requirement.Quantity,
+                ExperienceLevel = requirement.ExperienceLevel.ToString(),
+                RequiredSkills = requirement.RequiredSkills
+                    .Select(item => item.Skill.Name)
+                    .Distinct()
+                    .OrderBy(item => item)
+                    .ToList(),
+                CoverageScore = 100m,
+                BestCandidateScore = 0m,
+                RecommendedCandidates = []
+            };
+        }
+
         var requiredSkillItems = requirement.RequiredSkills
             .Select(item => item.Skill)
             .DistinctBy(item => item.Id)
@@ -156,10 +198,11 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             .ThenBy(item => item.FullName)
             .ToList();
 
-        var recommendedCandidates = candidateResponses.Take(candidateLimit).ToList();
+        var recommendationLimit = Math.Min(candidateLimit, remainingSlots);
+        var recommendedCandidates = candidateResponses.Take(recommendationLimit).ToList();
         var bestCandidateScore = candidateResponses.Count > 0 ? candidateResponses[0].FitScore : 0m;
         var coverageScore = requirement.Quantity > 0
-            ? candidateResponses.Take(requirement.Quantity).Sum(item => item.FitScore) / requirement.Quantity
+            ? ((fulfilledSlots * 100m) + candidateResponses.Take(remainingSlots).Sum(item => item.FitScore)) / requirement.Quantity
             : 0m;
 
         return new GeneralManagerProjectRequirementPredictionResponse

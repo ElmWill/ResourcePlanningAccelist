@@ -24,12 +24,6 @@ public class GetEmployeeDashboardRequestHandler : IRequestHandler<GetEmployeeDas
             .Where(a => a.EmployeeId == request.EmployeeId)
             .ToListAsync(cancellationToken);
 
-        Console.WriteLine($"[DEBUG] Found {assignments.Count} assignments for EmployeeId: {request.EmployeeId}");
-        foreach (var a in assignments)
-        {
-            Console.WriteLine($"[DEBUG] Assignment ID: {a.Id}, Status: {a.Status}");
-        }
-
         var pendingStatuses = new[] { AssignmentStatus.Pending, AssignmentStatus.GmApproved, AssignmentStatus.Approved };
         var activeStatuses = new[] { AssignmentStatus.Accepted, AssignmentStatus.InProgress };
 

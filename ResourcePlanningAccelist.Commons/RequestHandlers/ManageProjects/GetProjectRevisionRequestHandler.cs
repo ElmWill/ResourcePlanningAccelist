@@ -26,6 +26,8 @@ public class GetProjectRevisionRequestHandler : IRequestHandler<GetProjectRevisi
                 Name = p.Name,
                 ClientName = p.ClientName,
                 Description = p.Description,
+                StartDate = p.StartDate,
+                EndDate = p.EndDate,
                 RejectionReason = p.RejectionReason,
                 ProjectSkills = p.ProjectSkills.Select(ps => new ProjectSkillResponse
                 {

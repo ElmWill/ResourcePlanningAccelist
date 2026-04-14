@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace ResourcePlanningAccelist.Contracts.ResponseModels.ManageProjects;
 
@@ -11,6 +12,10 @@ public class GetProjectRevisionResponse
     public string? ClientName { get; set; }
 
     public string? Description { get; set; }
+
+    public DateOnly StartDate { get; set; }
+
+    public DateOnly EndDate { get; set; }
 
     public string? RejectionReason { get; set; }
 

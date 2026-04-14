@@ -11,5 +11,6 @@ public class CreateTaskAssignmentRequest : IRequest<CreateTaskAssignmentResponse
     public string TaskName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string Priority { get; set; } = "Medium";
+    public int? WorkloadHours { get; set; }
     public DateOnly DueDate { get; set; }
 }

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ResourcePlanningAccelist.Commons.RequestHandlers.ManageAssignments;
 using ResourcePlanningAccelist.Constants;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageTaskAssignments;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageTaskAssignments;
@@ -54,12 +55,20 @@ public class UpdateTaskAssignmentRequestHandler : IRequestHandler<UpdateTaskAssi
             }
         }
 
+        if (request.WorkloadHours.HasValue)
+        {
+            taskAssignment.WorkloadHours = request.WorkloadHours.Value;
+        }
+
         // Update due date if provided
         if (request.DueDate.HasValue)
         {
             taskAssignment.DueDate = request.DueDate.Value;
         }
 
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, taskAssignment.EmployeeId, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new UpdateTaskAssignmentResponse

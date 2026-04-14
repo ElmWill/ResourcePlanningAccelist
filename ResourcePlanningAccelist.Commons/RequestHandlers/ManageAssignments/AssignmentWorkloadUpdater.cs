@@ -14,6 +14,12 @@ internal static class AssignmentWorkloadUpdater
         AssignmentStatus.InProgress,
     };
 
+    private static readonly ResourcePlanningAccelist.Entities.TaskStatus[] ActiveTaskStatuses =
+    {
+        ResourcePlanningAccelist.Entities.TaskStatus.Pending,
+        ResourcePlanningAccelist.Entities.TaskStatus.InProgress,
+    };
+
     private const decimal WeeklyHoursBaseline = 40m;
 
     public static async Task RecalculateEmployeeWorkloadAsync(
@@ -32,10 +38,20 @@ internal static class AssignmentWorkloadUpdater
             .Select(group => Math.Min(100m, group.Sum(item => item.AllocationPercent)))
             .SumAsync(cancellationToken);
 
-        var normalizedWorkload = Math.Max(0m, allocationPercent);
+        var taskHours = await dbContext.TaskAssignments
+            .Where(item => item.EmployeeId == employeeId)
+            .Where(item => ActiveTaskStatuses.Contains(item.Status))
+            .SumAsync(item => (decimal)item.WorkloadHours, cancellationToken);
+
+        var taskWorkloadPercent = taskHours <= 0m
+            ? 0m
+            : (taskHours / WeeklyHoursBaseline) * 100m;
+
+        var normalizedWorkload = Math.Max(0m, allocationPercent + taskWorkloadPercent);
         employee.WorkloadPercent = normalizedWorkload;
         employee.AvailabilityPercent = Math.Max(0m, 100m - normalizedWorkload);
-        employee.AssignedHours = Math.Round((normalizedWorkload / 100m) * WeeklyHoursBaseline, 2, MidpointRounding.AwayFromZero);
+        var assignmentHours = (allocationPercent / 100m) * WeeklyHoursBaseline;
+        employee.AssignedHours = Math.Round(assignmentHours + taskHours, 2, MidpointRounding.AwayFromZero);
 
         employee.WorkloadState = normalizedWorkload switch
         {

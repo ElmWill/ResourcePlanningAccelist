@@ -30,5 +30,12 @@ public class UpdateTaskAssignmentRequestValidator : AbstractValidator<UpdateTask
                 .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow))
                 .WithMessage("Due date must be in the future");
         });
+
+        When(r => r.WorkloadHours.HasValue, () =>
+        {
+            RuleFor(r => r.WorkloadHours!.Value)
+                .InclusiveBetween(1, 80)
+                .WithMessage("Workload hours must be between 1 and 80");
+        });
     }
 }

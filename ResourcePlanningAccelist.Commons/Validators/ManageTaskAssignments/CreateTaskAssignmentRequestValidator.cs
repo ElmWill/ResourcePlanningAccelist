@@ -29,6 +29,13 @@ public class CreateTaskAssignmentRequestValidator : AbstractValidator<CreateTask
             .Must(priority => new[] { "Low", "Medium", "High" }.Contains(priority, StringComparer.OrdinalIgnoreCase))
             .WithMessage("Invalid priority level");
 
+        When(r => r.WorkloadHours.HasValue, () =>
+        {
+            RuleFor(r => r.WorkloadHours!.Value)
+                .InclusiveBetween(1, 80)
+                .WithMessage("Workload hours must be between 1 and 80");
+        });
+
         RuleFor(r => r.AssignedByUserId)
             .NotEmpty()
             .WithMessage("Assigned by user ID is required");

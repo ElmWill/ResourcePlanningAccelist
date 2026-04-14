@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ResourcePlanningAccelist.Commons.RequestHandlers.ManageAssignments;
 using ResourcePlanningAccelist.Constants;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageTaskAssignments;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageTaskAssignments;
@@ -40,14 +41,14 @@ public class CreateTaskAssignmentRequestHandler : IRequestHandler<CreateTaskAssi
             ? parsedPriority
             : PriorityLevel.Medium;
 
-        // Calculate workload hours based on priority
-        var workloadHours = priority switch
+        // Workload hours are the source of truth. Priority only provides fallback defaults.
+        var workloadHours = request.WorkloadHours ?? (priority switch
         {
             PriorityLevel.Low => 20,
             PriorityLevel.Medium => 30,
             PriorityLevel.High => 50,
             _ => 30
-        };
+        });
 
         // Create task assignment
         var taskAssignment = new TaskAssignment
@@ -65,6 +66,9 @@ public class CreateTaskAssignmentRequestHandler : IRequestHandler<CreateTaskAssi
         };
 
         _dbContext.TaskAssignments.Add(taskAssignment);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, taskAssignment.EmployeeId, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new CreateTaskAssignmentResponse

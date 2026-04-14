@@ -39,6 +39,37 @@ public class ProjectsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("{projectId:guid}/attachments")]
+    [Authorize(Policy = AuthorizationPolicyNames.MarketingOnly)]
+    public async Task<ActionResult<CreateProjectAttachmentResponse>> UploadAttachment(
+        Guid projectId,
+        [FromForm] IFormFile file,
+        [FromServices] IWebHostEnvironment environment,
+        CancellationToken cancellationToken)
+    {
+        using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream, cancellationToken);
+
+        var request = new CreateProjectAttachmentRequest
+        {
+            ProjectId = projectId,
+            FileName = file.FileName,
+            ContentType = file.ContentType,
+            FileSizeBytes = file.Length,
+            FileContent = memoryStream.ToArray()
+        };
+
+        var result = await _mediator.Send(request, cancellationToken);
+
+        // Write file to disk
+        var absolutePath = Path.Combine(environment.ContentRootPath, result.StorageKey);
+        var directory = Path.GetDirectoryName(absolutePath)!;
+        Directory.CreateDirectory(directory);
+        await System.IO.File.WriteAllBytesAsync(absolutePath, result.FileContent, cancellationToken);
+
+        return Ok(result);
+    }
+
     [HttpGet("{projectId:guid}")]
     [Authorize(Policy = AuthorizationPolicyNames.ProjectReadAccess)]
     public async Task<ActionResult<GetProjectDetailResponse>> Detail(

@@ -111,9 +111,7 @@ public class SplitAssignmentWorkloadRequestHandler : IRequestHandler<SplitAssign
             targetAssignment.AllocationPercent += appliedSplit;
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
 
-        await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, sourceAssignment.EmployeeId, cancellationToken);
         await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, targetAssignment.EmployeeId, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 

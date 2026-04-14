@@ -20,7 +20,6 @@ public class GetProjectManagerProjectTeamRequestHandler : IRequestHandler<GetPro
     {
         var activeAssignmentStatuses = new[]
         {
-            AssignmentStatus.Pending,
             AssignmentStatus.Approved,
             AssignmentStatus.Accepted,
             AssignmentStatus.InProgress,

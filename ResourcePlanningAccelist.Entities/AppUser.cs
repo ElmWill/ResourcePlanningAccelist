@@ -37,6 +37,8 @@ public class AppUser : AuditableEntity
 
     public virtual ICollection<Assignment> CreatedAssignments { get; set; } = new List<Assignment>();
 
+    public virtual ICollection<TaskAssignment> CreatedTaskAssignments { get; set; } = new List<TaskAssignment>();
+
     public virtual ICollection<AssignmentReview> AssignmentReviews { get; set; } = new List<AssignmentReview>();
 
     public virtual ICollection<EmployeeContract> ExecutedContracts { get; set; } = new List<EmployeeContract>();

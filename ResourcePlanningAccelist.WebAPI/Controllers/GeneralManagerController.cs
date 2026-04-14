@@ -71,7 +71,7 @@ public class GeneralManagerController : ControllerBase
     }
 
     [HttpGet("contract-decisions")]
-    [Authorize(Policy = AuthorizationPolicyNames.GmOnly)]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
     public async Task<ActionResult<GetGeneralManagerContractDecisionSummaryResponse>> GetContractDecisions(
         CancellationToken cancellationToken)
     {
@@ -80,7 +80,7 @@ public class GeneralManagerController : ControllerBase
         return Ok(result);
     }
     [HttpGet("decisions")]
-    [Authorize(Policy = AuthorizationPolicyNames.GmOnly)]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
     public async Task<ActionResult<GetGeneralManagerDecisionListResponse>> GetDecisions(
         CancellationToken cancellationToken)
     {

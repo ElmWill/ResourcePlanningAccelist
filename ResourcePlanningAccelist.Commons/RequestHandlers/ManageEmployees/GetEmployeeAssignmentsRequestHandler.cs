@@ -19,8 +19,11 @@ public class GetEmployeeAssignmentsRequestHandler : IRequestHandler<GetEmployeeA
 
     public async Task<GetEmployeeAssignmentsResponse> Handle(GetEmployeeAssignmentsRequest request, CancellationToken cancellationToken)
     {
-        var employeeExists = await _dbContext.Employees.AnyAsync(item => item.Id == request.EmployeeId, cancellationToken);
-        if (!employeeExists)
+        var employee = await _dbContext.Employees
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == request.EmployeeId || item.UserId == request.EmployeeId, cancellationToken);
+            
+        if (employee == null)
         {
             throw new KeyNotFoundException("Employee not found.");
         }
@@ -31,7 +34,7 @@ public class GetEmployeeAssignmentsRequestHandler : IRequestHandler<GetEmployeeA
 
         var query = _dbContext.Assignments
             .AsNoTracking()
-            .Where(item => item.EmployeeId == request.EmployeeId)
+            .Where(item => item.EmployeeId == employee.Id)
             .Include(item => item.Project)
             .Include(item => item.Employee)
                 .ThenInclude(item => item.User)

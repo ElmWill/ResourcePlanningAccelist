@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using static BCrypt.Net.BCrypt;
 using ResourcePlanningAccelist.Constants;
 using ResourcePlanningAccelist.Entities;
 
@@ -21,7 +22,23 @@ internal static class DevelopmentDataSeeder
 
         if (hasExistingData)
         {
-            logger.LogInformation("Existing data found. Running supplemental employee top-up only.");
+            logger.LogInformation("Existing data found. Checking for missing passwords and running supplemental top-up.");
+
+            // Fix any users missing passwords (one-time migration for existing dev data)
+            var usersWithoutPassword = await dbContext.Users
+                .Where(u => string.IsNullOrEmpty(u.PasswordHash))
+                .ToListAsync(cancellationToken);
+
+            if (usersWithoutPassword.Any())
+            {
+                logger.LogInformation("Applying default 'password123' to {Count} users.", usersWithoutPassword.Count);
+                var defaultHash = EnhancedHashPassword("password123");
+                foreach (var user in usersWithoutPassword)
+                {
+                    user.PasswordHash = defaultHash;
+                }
+            }
+
             await SeedSupplementalEmployeesForExistingDataAsync();
             await dbContext.SaveChangesAsync(cancellationToken);
             return;
@@ -113,7 +130,8 @@ internal static class DevelopmentDataSeeder
                         FullName = $"{namePrefix} Staff {candidateSequence:00}",
                         Role = UserRole.Employee,
                         Department = department,
-                        IsActive = true
+                        IsActive = true,
+                        PasswordHash = EnhancedHashPassword("password123")
                     };
 
                     var employee = new Employee
@@ -230,7 +248,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Maya Marketing",
             Role = UserRole.Marketing,
             Department = marketingDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var pmUser = new AppUser
@@ -240,7 +259,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Peter PM",
             Role = UserRole.Pm,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var gmUser = new AppUser
@@ -249,7 +269,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Grace GM",
             Role = UserRole.Gm,
             Department = productDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var hrUser = new AppUser
@@ -258,7 +279,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Helen HR",
             Role = UserRole.Hr,
             Department = hrDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var backendUser = new AppUser
@@ -267,7 +289,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Ben Backend",
             Role = UserRole.Employee,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var frontendUser = new AppUser
@@ -276,7 +299,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Fiona Frontend",
             Role = UserRole.Employee,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var designerUser = new AppUser
@@ -285,7 +309,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Diana Designer",
             Role = UserRole.Employee,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var productUser = new AppUser
@@ -294,7 +319,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Paula Product",
             Role = UserRole.Employee,
             Department = productDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var qaUser = new AppUser
@@ -303,7 +329,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Quinn QA",
             Role = UserRole.Employee,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var devopsUser = new AppUser
@@ -312,7 +339,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Devon Ops",
             Role = UserRole.Employee,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var analystUser = new AppUser
@@ -321,7 +349,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Avery Analyst",
             Role = UserRole.Employee,
             Department = productDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         dbContext.Users.AddRange(
@@ -578,7 +607,8 @@ internal static class DevelopmentDataSeeder
                     FullName = $"{namePrefix} Staff {sequence:00}",
                     Role = UserRole.Employee,
                     Department = department,
-                    IsActive = true
+                    IsActive = true,
+                    PasswordHash = EnhancedHashPassword("password123")
                 };
 
                 var employee = new Employee

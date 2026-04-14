@@ -51,7 +51,7 @@ public class AssignmentsController : ControllerBase
     }
 
     [HttpPost("update-status")]
-    [Authorize(Policy = AuthorizationPolicyNames.PmHrOrGm)]
+    [Authorize(Policy = AuthorizationPolicyNames.AnyRole)]
     public async Task<ActionResult<UpdateAssignmentStatusResponse>> UpdateStatus(
         [FromBody] UpdateAssignmentStatusRequest request,
         CancellationToken cancellationToken)

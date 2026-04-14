@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using ResourcePlanningAccelist.Commons.Security;
 using ResourcePlanningAccelist.Constants;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageEmployees;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageEmployees;
@@ -10,10 +11,12 @@ namespace ResourcePlanningAccelist.Commons.RequestHandlers.ManageEmployees;
 public class CreateEmployeeHandler : IRequestHandler<CreateEmployeeRequest, CreateEmployeeResponse>
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public CreateEmployeeHandler(ApplicationDbContext dbContext)
+    public CreateEmployeeHandler(ApplicationDbContext dbContext, IPasswordHasher passwordHasher)
     {
         _dbContext = dbContext;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<CreateEmployeeResponse> Handle(CreateEmployeeRequest request, CancellationToken cancellationToken)
@@ -31,14 +34,15 @@ public class CreateEmployeeHandler : IRequestHandler<CreateEmployeeRequest, Crea
             };
         }
 
-        // 1. Create the AppUser first (as requested: "yes immediately add account")
+        // 1. Create the AppUser first
         var user = new AppUser
         {
             Email = request.Email,
             FullName = request.FullName,
             Role = UserRole.Employee,
             DepartmentId = request.DepartmentId,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = _passwordHasher.Hash("password123")
         };
         _dbContext.Users.Add(user);
 

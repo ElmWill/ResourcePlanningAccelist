@@ -3,6 +3,7 @@ using ResourcePlanningAccelist.Commons.Extensions;
 using ResourcePlanningAccelist.WebAPI.AuthorizationPolicies;
 using ResourcePlanningAccelist.WebAPI.ExceptionHandling;
 using ResourcePlanningAccelist.Entities;
+using ResourcePlanningAccelist.Infrastructure;
 using ResourcePlanningAccelist.Infrastructure.Services;
 using Scalar.AspNetCore;
 
@@ -17,7 +18,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString);
 });
 builder.Services.AddApplicationCommons();
-builder.Services.AddRoleAuthorizationPolicies();
+builder.Services.AddInfrastructure();
+builder.Services.AddRoleAuthorizationPolicies(builder.Configuration);
 builder.Services.AddHostedService<DatabaseMigrationHostedService>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();

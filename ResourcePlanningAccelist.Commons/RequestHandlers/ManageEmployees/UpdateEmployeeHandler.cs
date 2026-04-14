@@ -55,6 +55,7 @@ public class UpdateEmployeeHandler : IRequestHandler<UpdateEmployeeRequest, Upda
                 .Where(es => es.EmployeeId == employee.Id)
                 .ToListAsync(cancellationToken);
 
+            // Kalau looping bisa add ke var dulu kemudian RemoveRange
             // Remove skills not in the request
             foreach (var current in currentSkills)
             {

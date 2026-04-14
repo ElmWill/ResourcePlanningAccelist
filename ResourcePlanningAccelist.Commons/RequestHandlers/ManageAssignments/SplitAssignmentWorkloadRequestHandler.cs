@@ -111,8 +111,10 @@ public class SplitAssignmentWorkloadRequestHandler : IRequestHandler<SplitAssign
             targetAssignment.AllocationPercent += appliedSplit;
         }
 
+        // Call 1x aja kalau possible di bawah
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        // Kenapa 2x call ini?
         await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, sourceAssignment.EmployeeId, cancellationToken);
         await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, targetAssignment.EmployeeId, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);

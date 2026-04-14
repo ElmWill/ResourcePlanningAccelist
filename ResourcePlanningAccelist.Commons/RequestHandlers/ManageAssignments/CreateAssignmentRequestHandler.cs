@@ -272,6 +272,7 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
         };
 
         _dbContext.Assignments.Add(assignment);
+        // Kalau possible, call 1x di bawah aja
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, assignment.EmployeeId, cancellationToken);

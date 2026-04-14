@@ -18,6 +18,7 @@ public class CreateEmployeeHandler : IRequestHandler<CreateEmployeeRequest, Crea
 
     public async Task<CreateEmployeeResponse> Handle(CreateEmployeeRequest request, CancellationToken cancellationToken)
     {
+        // Consider normalize email pakai ToLower
         // Check if user with same email exists
         var existingUser = await _dbContext.Users
             .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
@@ -81,6 +82,7 @@ public class CreateEmployeeHandler : IRequestHandler<CreateEmployeeRequest, Crea
         // Add Skills
         if (request.Skills != null && request.Skills.Any())
         {
+            // Kalau looping, lebih baik add ke var dulu baru nanti pakai AddRange
             foreach (var skillName in request.Skills)
             {
                 var skill = await _dbContext.Skills

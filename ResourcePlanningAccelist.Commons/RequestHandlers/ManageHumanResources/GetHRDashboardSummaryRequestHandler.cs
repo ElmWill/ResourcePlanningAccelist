@@ -65,6 +65,7 @@ public class GetHRDashboardSummaryRequestHandler : IRequestHandler<GetHRDashboar
             })
             .ToListAsync(cancellationToken);
 
+        // Better ambil data semua - ToListAsync baru filter per status, agar tidak beberapa kali open connection ke DB
         // GM Decisions tracking
         var gmDecisionsQuery = _dbContext.GmDecisions.AsNoTracking();
 

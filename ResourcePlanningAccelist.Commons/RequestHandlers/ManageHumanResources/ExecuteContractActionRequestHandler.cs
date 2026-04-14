@@ -38,6 +38,7 @@ public class ExecuteContractActionRequestHandler : IRequestHandler<ExecuteContra
             var employee = affected.Employee;
             if (employee == null) continue;
 
+            // !!! Jangan query di dalam loop !!! Lebih baik get all di luar, di dalam looping tinggal filter
             // Get current active or extended contract (the most recent one)
             var currentContract = await _dbContext.EmployeeContracts
                 .Where(c => c.EmployeeId == employee.Id && (c.Status == ContractStatus.Active || c.Status == ContractStatus.Extended))

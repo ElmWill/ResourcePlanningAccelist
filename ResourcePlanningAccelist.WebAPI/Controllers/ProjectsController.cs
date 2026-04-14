@@ -131,4 +131,15 @@ public class ProjectsController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("{projectId:guid}/revision")]
+    [Authorize(Policy = AuthorizationPolicyNames.ProjectReadAccess)]
+    public async Task<ActionResult<GetProjectRevisionResponse>> Revision(
+    Guid projectId,
+    CancellationToken cancellationToken)
+    {
+        var request = new GetProjectRevisionRequest { ProjectId = projectId };
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

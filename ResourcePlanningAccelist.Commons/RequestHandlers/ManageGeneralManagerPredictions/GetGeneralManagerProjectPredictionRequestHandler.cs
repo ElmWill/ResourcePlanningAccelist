@@ -12,6 +12,41 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
 {
     private readonly ApplicationDbContext _dbContext;
 
+    private const decimal MinimumEligibleSkillScorePercent = 30m;
+
+    private static readonly HashSet<string> RoleStopWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "and",
+        "the",
+        "for",
+        "with",
+        "resource",
+        "staff",
+    };
+
+    private static readonly Dictionary<string, string[]> DepartmentHintMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["backend"] = ["engineering", "technology", "it"],
+        ["frontend"] = ["engineering", "technology", "it"],
+        ["fullstack"] = ["engineering", "technology", "it"],
+        ["developer"] = ["engineering", "technology", "it"],
+        ["engineer"] = ["engineering", "technology", "it"],
+        ["qa"] = ["engineering", "technology", "it"],
+        ["tester"] = ["engineering", "technology", "it"],
+        ["devops"] = ["engineering", "technology", "it"],
+        ["sre"] = ["engineering", "technology", "it"],
+        ["data"] = ["engineering", "technology", "it"],
+        ["design"] = ["design", "product"],
+        ["ui"] = ["design", "product"],
+        ["ux"] = ["design", "product"],
+        ["marketing"] = ["marketing"],
+        ["sales"] = ["sales", "business"],
+        ["hr"] = ["hr", "human resource"],
+        ["recruit"] = ["hr", "human resource"],
+        ["finance"] = ["finance", "accounting"],
+        ["account"] = ["finance", "accounting"],
+    };
+
     private static readonly AssignmentStatus[] ActiveAssignmentStatuses =
     {
         AssignmentStatus.Pending,
@@ -185,7 +220,24 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             .DistinctBy(item => item.Id)
             .ToList();
 
-        var candidateResponses = employees
+        var roleKeywords = BuildRoleKeywords(requirement.RoleName, requiredSkillItems);
+        var departmentHints = BuildDepartmentHints(roleKeywords);
+
+        var roleAndDepartmentCandidates = employees
+            .Where(employee => EmployeeMatchesRoleAndDepartment(employee, roleKeywords, departmentHints))
+            .ToList();
+
+        var roleOnlyCandidates = employees
+            .Where(employee => EmployeeMatchesRole(employee, roleKeywords))
+            .ToList();
+
+        var candidatePool = roleAndDepartmentCandidates.Count > 0
+            ? roleAndDepartmentCandidates
+            : roleOnlyCandidates.Count > 0
+                ? roleOnlyCandidates
+                : employees;
+
+        var candidateResponses = candidatePool
             .Select(employee => BuildCandidatePrediction(
                 employee,
                 requirement.RoleName,
@@ -198,11 +250,18 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             .ThenBy(item => item.FullName)
             .ToList();
 
+        var eligibleCandidateResponses = requiredSkillItems.Count > 0
+            ? candidateResponses
+                .Where(item => item.MatchedSkills.Count > 0)
+                .Where(item => item.SkillScore >= MinimumEligibleSkillScorePercent)
+                .ToList()
+            : candidateResponses;
+
         var recommendationLimit = Math.Min(candidateLimit, remainingSlots);
-        var recommendedCandidates = candidateResponses.Take(recommendationLimit).ToList();
-        var bestCandidateScore = candidateResponses.Count > 0 ? candidateResponses[0].FitScore : 0m;
+        var recommendedCandidates = eligibleCandidateResponses.Take(recommendationLimit).ToList();
+        var bestCandidateScore = eligibleCandidateResponses.Count > 0 ? eligibleCandidateResponses[0].FitScore : 0m;
         var coverageScore = requirement.Quantity > 0
-            ? ((fulfilledSlots * 100m) + candidateResponses.Take(remainingSlots).Sum(item => item.FitScore)) / requirement.Quantity
+            ? ((fulfilledSlots * 100m) + eligibleCandidateResponses.Take(remainingSlots).Sum(item => item.FitScore)) / requirement.Quantity
             : 0m;
 
         return new GeneralManagerProjectRequirementPredictionResponse
@@ -358,5 +417,68 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
     private static decimal RoundScore(decimal value)
     {
         return Math.Round(value, 2, MidpointRounding.AwayFromZero);
+    }
+
+    private static bool EmployeeMatchesRoleAndDepartment(Employee employee, IReadOnlyCollection<string> roleKeywords, IReadOnlyCollection<string> departmentHints)
+    {
+        return EmployeeMatchesRole(employee, roleKeywords)
+            && EmployeeMatchesDepartment(employee, departmentHints);
+    }
+
+    private static bool EmployeeMatchesRole(Employee employee, IReadOnlyCollection<string> roleKeywords)
+    {
+        if (roleKeywords.Count == 0)
+        {
+            return true;
+        }
+
+        var employeeSignals = employee.EmployeeSkills
+            .Select(item => item.Skill.Name)
+            .Append(employee.JobTitle)
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Select(item => item.ToLowerInvariant())
+            .ToList();
+
+        return roleKeywords.Any(keyword => employeeSignals.Any(signal => signal.Contains(keyword, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static bool EmployeeMatchesDepartment(Employee employee, IReadOnlyCollection<string> departmentHints)
+    {
+        if (departmentHints.Count == 0)
+        {
+            return true;
+        }
+
+        var departmentName = employee.Department?.Name ?? string.Empty;
+        return departmentHints.Any(hint => departmentName.Contains(hint, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static List<string> BuildRoleKeywords(string roleName, IReadOnlyCollection<Skill> requiredSkills)
+    {
+        var roleNameKeywords = roleName
+            .Split([' ', '-', '/', '(', ')', ',', '.'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(keyword => keyword.Trim().ToLowerInvariant())
+            .Where(keyword => keyword.Length >= 3)
+            .Where(keyword => !RoleStopWords.Contains(keyword));
+
+        var requiredSkillKeywords = requiredSkills
+            .Select(item => item.Name)
+            .SelectMany(skill => skill.Split([' ', '-', '/', '(', ')', ',', '.'], StringSplitOptions.RemoveEmptyEntries))
+            .Select(keyword => keyword.Trim().ToLowerInvariant())
+            .Where(keyword => keyword.Length >= 3)
+            .Where(keyword => !RoleStopWords.Contains(keyword));
+
+        return roleNameKeywords
+            .Concat(requiredSkillKeywords)
+            .Distinct()
+            .ToList();
+    }
+
+    private static List<string> BuildDepartmentHints(IReadOnlyCollection<string> roleKeywords)
+    {
+        return roleKeywords
+            .SelectMany(keyword => DepartmentHintMap.TryGetValue(keyword, out var hints) ? hints : [])
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

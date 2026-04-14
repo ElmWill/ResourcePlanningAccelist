@@ -155,7 +155,6 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
                     var normalizedEmployeeSkills = employee.EmployeeSkills
                         .Select(employeeSkill => employeeSkill.Skill.Name.ToLowerInvariant())
                         .Append(employee.JobTitle.ToLowerInvariant())
-                        .Append(employee.Department?.Name?.ToLowerInvariant() ?? string.Empty)
                         .Where(skill => !string.IsNullOrWhiteSpace(skill))
                         .Distinct()
                         .ToList();
@@ -201,20 +200,22 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
 
             var rankedCandidates = candidateScores
                 .Where(candidate => candidate.RoleMatch)
+                .Where(candidate => candidate.DepartmentMatch)
                 .Where(candidate => requiredSkills.Count == 0 || candidate.MatchedSkillsCount > 0)
                 .OrderByDescending(candidate => candidate.MatchedSkillsCount)
                 .ThenByDescending(candidate => candidate.Score)
                 .ToList();
 
-            if (rankedCandidates.Count == 0)
+            if (rankedCandidates.Count == 0 && requiredSkills.Count == 0)
             {
                 rankedCandidates = candidateScores
                     .Where(candidate => candidate.RoleMatch)
+                    .Where(candidate => candidate.DepartmentMatch)
                     .OrderByDescending(candidate => candidate.Score)
                     .ToList();
             }
 
-            if (rankedCandidates.Count == 0)
+            if (rankedCandidates.Count == 0 && requiredSkills.Count == 0)
             {
                 rankedCandidates = candidateScores
                     .Where(candidate => candidate.DepartmentMatch)

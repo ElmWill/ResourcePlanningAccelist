@@ -9,5 +9,7 @@ public class UpdateProjectStatusRequest : IRequest<UpdateProjectStatusResponse>
 
     public string Status { get; set; } = string.Empty;
 
+    public Guid? PmOwnerUserId { get; set; }
+
     public string? RejectionReason { get; set; }
 }

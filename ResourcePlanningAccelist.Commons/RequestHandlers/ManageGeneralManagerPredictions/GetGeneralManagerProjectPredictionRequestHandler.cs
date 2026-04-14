@@ -92,7 +92,7 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             .AsNoTracking()
             .Where(item => item.ProjectId == project.Id)
             .Where(item => ActiveAssignmentStatuses.Contains(item.Status))
-            .Where(item => item.AllocationPercent > 0)
+            .Where(item => item.AllocationPercent >= 0)
             .GroupBy(item => item.RoleName.ToLower())
             .Select(group => new
             {

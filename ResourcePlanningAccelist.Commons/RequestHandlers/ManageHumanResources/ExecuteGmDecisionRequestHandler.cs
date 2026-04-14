@@ -58,7 +58,7 @@ public class ExecuteGmDecisionRequestHandler : IRequestHandler<ExecuteGmDecision
                                 RoleName = roleName,
                                 StartDate = startDate,
                                 EndDate = endDate,
-                                AllocationPercent = allocation,
+                                AllocationPercent = 0.0m, // GM assigns resource at 0% workload; PM will refine later.
                                 Status = AssignmentStatus.Approved,
                                 AcceptedAt = DateTimeOffset.UtcNow,
                                 ConflictWarning = $"Auto-created from GM decision execution ({decision.Title}).",

@@ -19,20 +19,19 @@ public class GetHRDashboardSummaryRequestHandler : IRequestHandler<GetHRDashboar
 
     public async Task<GetHRDashboardSummaryResponse> Handle(GetHRDashboardSummaryRequest request, CancellationToken cancellationToken)
     {
-        var pendingAssignmentsQuery = _dbContext.Assignments
-            .AsNoTracking()
-            .Where(item => item.Status == AssignmentStatus.GmApproved);
-
-        var pendingCount = await pendingAssignmentsQuery.CountAsync(cancellationToken);
-
-        var totalEmployees = await _dbContext.Employees
-            .AsNoTracking()
-            .CountAsync(item => item.Status == EmploymentStatus.Active, cancellationToken);
-
         var now = DateTimeOffset.UtcNow;
 
-        var recentRequests = await pendingAssignmentsQuery
+        // Combine Assignment queries: fetch all GM-approved assignments once
+        var allPendingAssignments = await _dbContext.Assignments
+            .AsNoTracking()
+            .Where(item => item.Status == AssignmentStatus.GmApproved)
             .OrderByDescending(item => item.CreatedAt)
+            .Include(item => item.Employee.User)
+            .Include(item => item.Project)
+            .ToListAsync(cancellationToken);
+
+        var pendingCount = allPendingAssignments.Count;
+        var recentRequests = allPendingAssignments
             .Take(5)
             .Select(item => new HRRecentValidationRequestResponse
             {
@@ -42,7 +41,11 @@ public class GetHRDashboardSummaryRequestHandler : IRequestHandler<GetHRDashboar
                 HasConflict = !string.IsNullOrEmpty(item.ConflictWarning),
                 DaysWaiting = (int)(now - item.CreatedAt).TotalDays
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
+
+        var totalEmployees = await _dbContext.Employees
+            .AsNoTracking()
+            .CountAsync(item => item.Status == EmploymentStatus.Active, cancellationToken);
 
         // Calculate Active Hiring Requests
         var activeHiringCount = await _dbContext.HiringRequests
@@ -65,17 +68,16 @@ public class GetHRDashboardSummaryRequestHandler : IRequestHandler<GetHRDashboar
             })
             .ToListAsync(cancellationToken);
 
-        // GM Decisions tracking
-        var gmDecisionsQuery = _dbContext.GmDecisions.AsNoTracking();
-
-        var pendingGmDecisionsCount = await gmDecisionsQuery
-            .CountAsync(item => item.Status == DecisionStatus.Executed, cancellationToken);
-
-        var pendingClarificationsCount = await gmDecisionsQuery
-            .CountAsync(item => item.Status == DecisionStatus.ClarificationRequested, cancellationToken);
-            
-        var recentGmDecisions = await gmDecisionsQuery
+        // GM Decisions tracking: fetch into memory to avoid multiple round-trips
+        var allGmDecisions = await _dbContext.GmDecisions
+            .AsNoTracking()
             .OrderByDescending(item => item.SubmittedAt)
+            .ToListAsync(cancellationToken);
+
+        var pendingGmDecisionsCount = allGmDecisions.Count(item => item.Status == DecisionStatus.Executed);
+        var pendingClarificationsCount = allGmDecisions.Count(item => item.Status == DecisionStatus.ClarificationRequested);
+            
+        var recentGmDecisions = allGmDecisions
             .Take(5)
             .Select(item => new RecentGmDecisionResponse
             {
@@ -85,7 +87,7 @@ public class GetHRDashboardSummaryRequestHandler : IRequestHandler<GetHRDashboar
                 Date = item.SubmittedAt,
                 Status = item.Status.ToString()
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return new GetHRDashboardSummaryResponse
         {

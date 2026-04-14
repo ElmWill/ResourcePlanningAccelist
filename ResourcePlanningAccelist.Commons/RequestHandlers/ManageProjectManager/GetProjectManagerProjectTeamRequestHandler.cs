@@ -38,7 +38,7 @@ public class GetProjectManagerProjectTeamRequestHandler : IRequestHandler<GetPro
             .AsNoTracking()
             .Where(item => item.ProjectId == request.ProjectId)
             .Where(item => activeAssignmentStatuses.Contains(item.Status))
-            .Where(item => item.AllocationPercent > 0)
+            .Where(item => item.AllocationPercent >= 0)
             .Include(item => item.Employee)
                 .ThenInclude(item => item.User)
             .OrderBy(item => item.Employee.User.FullName)

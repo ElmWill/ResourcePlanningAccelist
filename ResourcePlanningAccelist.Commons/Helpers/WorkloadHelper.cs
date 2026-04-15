@@ -14,9 +14,10 @@ public static class WorkloadHelper
 
         if (employee == null) return;
 
-        // Only count Approved, Accepted, or InProgress assignments towards current workload
+        // Count pending and active assignments towards current workload so project assignment impact is immediate
         var activeAssignments = employee.Assignments
-            .Where(a => a.Status == AssignmentStatus.Approved || 
+            .Where(a => a.Status == AssignmentStatus.Pending ||
+                        a.Status == AssignmentStatus.Approved || 
                         a.Status == AssignmentStatus.Accepted || 
                         a.Status == AssignmentStatus.InProgress)
             .ToList();

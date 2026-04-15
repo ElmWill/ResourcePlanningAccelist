@@ -102,6 +102,15 @@ public class EmployeesController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("recalculate-workloads")]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
+    public async Task<ActionResult<RecalculateEmployeeWorkloadsResponse>> RecalculateWorkloads(
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new RecalculateEmployeeWorkloadsRequest(), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPut("update/{employeeId:guid}")]
     [Authorize(Policy = AuthorizationPolicyNames.HrOnly)]
     public async Task<ActionResult<UpdateEmployeeResponse>> Update(

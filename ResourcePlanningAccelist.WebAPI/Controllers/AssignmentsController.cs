@@ -79,4 +79,15 @@ public class AssignmentsController : ControllerBase
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("employee-dashboard/{employeeId:guid}")]
+    [Authorize(Policy = AuthorizationPolicyNames.AnyRole)]
+    public async Task<ActionResult<GetEmployeeDashboardResponse>> GetEmployeeDashboard(
+        Guid employeeId,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetEmployeeDashboardRequest { EmployeeId = employeeId };
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
 }

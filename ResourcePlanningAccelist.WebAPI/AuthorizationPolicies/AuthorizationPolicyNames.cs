@@ -16,6 +16,8 @@ public static class AuthorizationPolicyNames
     public const string HrOrGm = "HrOrGm";
 
     public const string PmHrOrGm = "PmHrOrGm";
+    public const string EmployeeOnly = "EmployeeOnly";
+    public const string AnyRole = "AnyRole";
 
     public const string ProjectReadAccess = "ProjectReadAccess";
 }

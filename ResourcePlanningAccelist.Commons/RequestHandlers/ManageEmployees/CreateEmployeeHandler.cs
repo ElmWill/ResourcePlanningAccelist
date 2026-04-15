@@ -78,27 +78,35 @@ public class CreateEmployeeHandler : IRequestHandler<CreateEmployeeRequest, Crea
         };
         _dbContext.EmployeeContracts.Add(contract);
 
-        // Add Skills
+        // Add Skills: Optimized to fetch all in once and use AddRange
         if (request.Skills != null && request.Skills.Any())
         {
+            var existingSkills = await _dbContext.Skills
+                .Where(s => request.Skills.Contains(s.Name))
+                .ToDictionaryAsync(s => s.Name, s => s, cancellationToken);
+
+            var newSkills = new List<Skill>();
+            var employeeSkills = new List<EmployeeSkill>();
+
             foreach (var skillName in request.Skills)
             {
-                var skill = await _dbContext.Skills
-                    .FirstOrDefaultAsync(s => s.Name == skillName, cancellationToken);
-
-                if (skill == null)
+                if (!existingSkills.TryGetValue(skillName, out var skill))
                 {
                     skill = new Skill { Name = skillName, Category = SkillCategory.Technical };
-                    _dbContext.Skills.Add(skill);
+                    newSkills.Add(skill);
+                    existingSkills[skillName] = skill; // Prevent duplicates in the same request
                 }
 
-                _dbContext.EmployeeSkills.Add(new EmployeeSkill
+                employeeSkills.Add(new EmployeeSkill
                 {
                     Employee = employee,
                     Skill = skill,
                     Proficiency = 3
                 });
             }
+
+            if (newSkills.Any()) _dbContext.Skills.AddRange(newSkills);
+            if (employeeSkills.Any()) _dbContext.EmployeeSkills.AddRange(employeeSkills);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

@@ -67,6 +67,8 @@ public class Project : AuditableEntity
 
     public virtual ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
 
+    public virtual ICollection<TaskAssignment> TaskAssignments { get; set; } = new List<TaskAssignment>();
+
     public virtual ICollection<GmDecision> Decisions { get; set; } = new List<GmDecision>();
 
     public virtual ICollection<EmployeeContract> CurrentContracts { get; set; } = new List<EmployeeContract>();

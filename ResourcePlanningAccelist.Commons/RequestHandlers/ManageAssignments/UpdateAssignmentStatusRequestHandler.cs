@@ -12,6 +12,14 @@ public class UpdateAssignmentStatusRequestHandler : IRequestHandler<UpdateAssign
 {
     private readonly ApplicationDbContext _dbContext;
 
+    private static readonly AssignmentStatus[] ActiveAssignmentStatuses =
+    {
+        AssignmentStatus.Pending,
+        AssignmentStatus.Approved,
+        AssignmentStatus.Accepted,
+        AssignmentStatus.InProgress,
+    };
+
     public UpdateAssignmentStatusRequestHandler(ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -21,6 +29,8 @@ public class UpdateAssignmentStatusRequestHandler : IRequestHandler<UpdateAssign
     {
         var assignment = await _dbContext.Assignments.FirstOrDefaultAsync(item => item.Id == request.AssignmentId, cancellationToken)
             ?? throw new KeyNotFoundException("Assignment not found.");
+
+        var previousStatus = assignment.Status;
 
         if (!Enum.TryParse<AssignmentStatus>(request.Status, true, out var parsedStatus))
         {
@@ -37,6 +47,26 @@ public class UpdateAssignmentStatusRequestHandler : IRequestHandler<UpdateAssign
         if (parsedStatus == AssignmentStatus.Rejected)
         {
             assignment.RejectedAt = DateTimeOffset.UtcNow;
+
+            if (previousStatus == AssignmentStatus.Pending)
+            {
+                var project = await _dbContext.Projects.FirstOrDefaultAsync(item => item.Id == assignment.ProjectId, cancellationToken);
+
+                if (project is not null && project.TotalRequiredResources > 0)
+                {
+                    var activeDistinctMembersAfterRejection = await _dbContext.Assignments
+                        .AsNoTracking()
+                        .Where(item => item.ProjectId == assignment.ProjectId)
+                        .Where(item => item.Id != assignment.Id)
+                        .Where(item => ActiveAssignmentStatuses.Contains(item.Status))
+                        .Select(item => item.EmployeeId)
+                        .Distinct()
+                        .CountAsync(cancellationToken);
+
+                    var rolledBackRequiredResources = project.TotalRequiredResources - 1;
+                    project.TotalRequiredResources = Math.Max(activeDistinctMembersAfterRejection, rolledBackRequiredResources);
+                }
+            }
         }
 
         // SAVE FIRST so the recalculation query can see the new status

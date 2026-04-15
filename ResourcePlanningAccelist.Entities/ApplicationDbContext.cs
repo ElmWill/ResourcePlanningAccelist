@@ -41,6 +41,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<AssignmentReview> AssignmentReviews => Set<AssignmentReview>();
 
+    public DbSet<TaskAssignment> TaskAssignments => Set<TaskAssignment>();
+
     public DbSet<EmployeeContract> EmployeeContracts => Set<EmployeeContract>();
 
     public DbSet<GmDecision> GmDecisions => Set<GmDecision>();
@@ -103,6 +105,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Assignment>().Property(entity => entity.Priority).HasConversion<string>();
         modelBuilder.Entity<Assignment>().Property(entity => entity.Status).HasConversion<string>();
         modelBuilder.Entity<AssignmentReview>().Property(entity => entity.Status).HasConversion<string>();
+        modelBuilder.Entity<TaskAssignment>().Property(entity => entity.Priority).HasConversion<string>();
+        modelBuilder.Entity<TaskAssignment>().Property(entity => entity.Status).HasConversion<string>();
         modelBuilder.Entity<EmployeeContract>().Property(entity => entity.Status).HasConversion<string>();
         modelBuilder.Entity<GmDecision>().Property(entity => entity.DecisionType).HasConversion<string>();
         modelBuilder.Entity<GmDecision>().Property(entity => entity.Status).HasConversion<string>();
@@ -159,6 +163,11 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(item => item.AssignedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+                entity.HasMany(item => item.CreatedTaskAssignments)
+                    .WithOne(item => item.AssignedByUser)
+                    .HasForeignKey(item => item.AssignedByUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
             entity.HasMany(item => item.AssignmentReviews)
                 .WithOne(item => item.ReviewedByUser)
                 .HasForeignKey(item => item.ReviewedByUserId)
@@ -196,6 +205,11 @@ public class ApplicationDbContext : DbContext
                 .WithOne(item => item.Employee)
                 .HasForeignKey(item => item.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(item => item.TaskAssignments)
+                    .WithOne(item => item.Employee)
+                    .HasForeignKey(item => item.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(item => item.Contracts)
                 .WithOne(item => item.Employee)
@@ -257,6 +271,11 @@ public class ApplicationDbContext : DbContext
                 .WithOne(item => item.Project)
                 .HasForeignKey(item => item.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(item => item.TaskAssignments)
+                    .WithOne(item => item.Project)
+                    .HasForeignKey(item => item.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(item => item.Decisions)
                 .WithOne(item => item.Project)

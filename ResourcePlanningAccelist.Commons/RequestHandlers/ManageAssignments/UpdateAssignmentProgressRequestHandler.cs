@@ -32,6 +32,10 @@ public class UpdateAssignmentProgressRequestHandler : IRequestHandler<UpdateAssi
             assignment.Status = AssignmentStatus.InProgress;
         }
 
+        //Save first to trigger RecalculateEmployeeWorkloadAsync
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, assignment.EmployeeId, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new UpdateAssignmentProgressResponse

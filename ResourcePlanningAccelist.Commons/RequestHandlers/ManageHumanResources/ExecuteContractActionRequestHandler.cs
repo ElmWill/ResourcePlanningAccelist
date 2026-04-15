@@ -33,16 +33,22 @@ public class ExecuteContractActionRequestHandler : IRequestHandler<ExecuteContra
             };
         }
 
+        // Fetch all active/extended contracts for these employees
+        var employeeIds = decision.AffectedEmployees.Select(ae => ae.EmployeeId).ToList();
+        var allActiveContracts = await _dbContext.EmployeeContracts
+            .Where(c => employeeIds.Contains(c.EmployeeId) && 
+                       (c.Status == ContractStatus.Active || c.Status == ContractStatus.Extended))
+            .OrderByDescending(c => c.EndDate)
+            .ToListAsync(cancellationToken);
+
         foreach (var affected in decision.AffectedEmployees)
         {
             var employee = affected.Employee;
             if (employee == null) continue;
 
-            // Get current active or extended contract (the most recent one)
-            var currentContract = await _dbContext.EmployeeContracts
-                .Where(c => c.EmployeeId == employee.Id && (c.Status == ContractStatus.Active || c.Status == ContractStatus.Extended))
-                .OrderByDescending(c => c.EndDate)
-                .FirstOrDefaultAsync(cancellationToken);
+            // Get current active or extended contract from the pre-fetched list (memory lookup)
+            var currentContract = allActiveContracts
+                .FirstOrDefault(c => c.EmployeeId == employee.Id);
 
             if (decision.DecisionType == DecisionType.TerminateContract)
             {

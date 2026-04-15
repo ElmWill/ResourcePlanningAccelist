@@ -55,36 +55,49 @@ public class UpdateEmployeeHandler : IRequestHandler<UpdateEmployeeRequest, Upda
                 .Where(es => es.EmployeeId == employee.Id)
                 .ToListAsync(cancellationToken);
 
-            // Remove skills not in the request
-            foreach (var current in currentSkills)
+            // 1. Remove skills not in the request
+            var skillsToRemove = currentSkills
+                .Where(cs => !request.Skills.Contains(cs.Skill.Name))
+                .ToList();
+
+            if (skillsToRemove.Any())
             {
-                if (!request.Skills.Contains(current.Skill.Name))
-                {
-                    _dbContext.EmployeeSkills.Remove(current);
-                }
+                _dbContext.EmployeeSkills.RemoveRange(skillsToRemove);
             }
 
-            // Add skills from request that aren't already there
-            foreach (var skillName in request.Skills)
-            {
-                if (!currentSkills.Any(cs => cs.Skill.Name == skillName))
-                {
-                    var skill = await _dbContext.Skills
-                        .FirstOrDefaultAsync(s => s.Name == skillName, cancellationToken);
+            // 2. Add skills from request that aren't already there
+            var skillNamesToAdd = request.Skills
+                .Where(name => !currentSkills.Any(cs => cs.Skill.Name == name))
+                .ToList();
 
-                    if (skill == null)
+            if (skillNamesToAdd.Any())
+            {
+                var existingSkillsInDb = await _dbContext.Skills
+                    .Where(s => skillNamesToAdd.Contains(s.Name))
+                    .ToDictionaryAsync(s => s.Name, s => s, cancellationToken);
+
+                var newSkillsToCreate = new List<Skill>();
+                var newEmployeeSkills = new List<EmployeeSkill>();
+
+                foreach (var skillName in skillNamesToAdd)
+                {
+                    if (!existingSkillsInDb.TryGetValue(skillName, out var skill))
                     {
                         skill = new Skill { Name = skillName, Category = SkillCategory.Technical };
-                        _dbContext.Skills.Add(skill);
+                        newSkillsToCreate.Add(skill);
+                        existingSkillsInDb[skillName] = skill; // Prevent duplicates
                     }
 
-                    _dbContext.EmployeeSkills.Add(new EmployeeSkill
+                    newEmployeeSkills.Add(new EmployeeSkill
                     {
                         EmployeeId = employee.Id,
                         Skill = skill,
                         Proficiency = 3
                     });
                 }
+
+                if (newSkillsToCreate.Any()) _dbContext.Skills.AddRange(newSkillsToCreate);
+                if (newEmployeeSkills.Any()) _dbContext.EmployeeSkills.AddRange(newEmployeeSkills);
             }
         }
 

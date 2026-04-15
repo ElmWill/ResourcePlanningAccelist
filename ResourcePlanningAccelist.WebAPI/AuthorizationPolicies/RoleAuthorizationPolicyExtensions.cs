@@ -49,6 +49,17 @@ public static class RoleAuthorizationPolicyExtensions
                     UserRole.Hr.ToString().ToLowerInvariant(),
                     UserRole.Gm.ToString().ToLowerInvariant()));
 
+            options.AddPolicy(AuthorizationPolicyNames.EmployeeOnly, policy =>
+                policy.RequireRole(UserRole.Employee.ToString().ToLowerInvariant()));
+
+            options.AddPolicy(AuthorizationPolicyNames.AnyRole, policy =>
+                policy.RequireRole(
+                    UserRole.Marketing.ToString().ToLowerInvariant(),
+                    UserRole.Pm.ToString().ToLowerInvariant(),
+                    UserRole.Gm.ToString().ToLowerInvariant(),
+                    UserRole.Hr.ToString().ToLowerInvariant(),
+                    UserRole.Employee.ToString().ToLowerInvariant()));
+
             options.AddPolicy(AuthorizationPolicyNames.ProjectReadAccess, policy =>
                 policy.RequireRole(
                     UserRole.Marketing.ToString().ToLowerInvariant(),

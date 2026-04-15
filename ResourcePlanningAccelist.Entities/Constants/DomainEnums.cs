@@ -52,6 +52,7 @@ public enum PriorityLevel
 public enum AssignmentStatus
 {
     Pending,
+    GmApproved,
     Approved,
     Rejected,
     Accepted,

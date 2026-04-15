@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ResourcePlanningAccelist.Constants;
@@ -26,10 +28,75 @@ public class ExecuteGmDecisionRequestHandler : IRequestHandler<ExecuteGmDecision
 
         if (decision != null)
         {
+            if (decision.DecisionType == DecisionType.ProjectAssignment && decision.Status == DecisionStatus.Pending)
+            {
+                // Delayed creation logic: Parse the JSON metadata stored in Details
+                try
+                {
+                    var jsonStart = decision.Details.IndexOf('{');
+                    if (jsonStart >= 0)
+                    {
+                        var json = decision.Details.Substring(jsonStart);
+                        using var metadata = JsonDocument.Parse(json);
+                        if (metadata.RootElement.TryGetProperty("assignment", out var assignmentData))
+                        {
+                            var empId = assignmentData.GetProperty("employeeId").GetGuid();
+                            var roleName = assignmentData.GetProperty("roleName").GetString() ?? "Resource";
+                            var startDate = DateOnly.Parse(assignmentData.GetProperty("startDate").GetString()!);
+                            var endDate = DateOnly.Parse(assignmentData.GetProperty("endDate").GetString()!);
+                            var allocation = assignmentData.GetProperty("allocationPercent").GetDecimal();
+                            var skills = assignmentData.GetProperty("requiredSkills").EnumerateArray()
+                                .Select(s => s.GetString() ?? string.Empty)
+                                .Where(s => !string.IsNullOrEmpty(s))
+                                .ToList();
+
+                            var newAssignment = new Assignment
+                            {
+                                ProjectId = decision.ProjectId ?? Guid.Empty,
+                                EmployeeId = empId,
+                                AssignedByUserId = decision.SubmittedByUserId,
+                                RoleName = roleName,
+                                StartDate = startDate,
+                                EndDate = endDate,
+                                AllocationPercent = 0.0m, // GM assigns resource at 0% workload; PM will refine later.
+                                Status = AssignmentStatus.Approved,
+                                AcceptedAt = DateTimeOffset.UtcNow,
+                                ConflictWarning = $"Auto-created from GM decision execution ({decision.Title}).",
+                            };
+
+                            _dbContext.Assignments.Add(newAssignment);
+
+                            // Notify Employee
+                            _dbContext.Notifications.Add(new Notification
+                            {
+                                UserId = await _dbContext.Employees.Where(e => e.Id == empId).Select(e => e.UserId).FirstAsync(cancellationToken),
+                                Type = NotificationType.Assignment,
+                                Title = "New Management Assignment",
+                                Message = $"A GM-approved assignment for project '{decision.Title}' has been finalized and assigned to you.",
+                                CreatedAt = DateTimeOffset.UtcNow,
+                                IsRead = false,
+                                SourceEntityType = "Assignment",
+                                SourceEntityId = newAssignment.Id
+                            });
+
+                            // Save assignment first so WorkloadHelper can see it
+                            await _dbContext.SaveChangesAsync(cancellationToken);
+
+                            // Recalculate Workload
+                            await WorkloadHelper.RecalculateEmployeeWorkloadAsync(empId, _dbContext, cancellationToken);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // If JSON parsing fails, we still mark the decision as executed but log/handle the failure
+                    // In a production app, we would use a logging framework here.
+                    Console.WriteLine($"Failed to create assignment from GM decision JSON metadata: {ex.Message}");
+                }
+            }
+
             decision.Status = DecisionStatus.Executed;
             decision.ExecutedAt = DateTimeOffset.UtcNow;
-            // In a real app, we'd get the current user ID from the context
-            // decision.ExecutedByUserId = ... 
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 

@@ -34,32 +34,59 @@ public class GetEmployeeListRequestHandler : IRequestHandler<GetEmployeeListRequ
             query = query.Where(employee => employee.Department != null && employee.Department.Name == request.Department);
         }
 
+        var activeStatuses = new[] { 
+            AssignmentStatus.Pending, 
+            AssignmentStatus.GmApproved, 
+            AssignmentStatus.Approved, 
+            AssignmentStatus.Accepted, 
+            AssignmentStatus.InProgress 
+        };
+
         var employees = await query
             .OrderBy(employee => employee.User.FullName)
-            .Select(employee => new EmployeeListItemResponse
+            .Select(employee => new 
             {
-                Id = employee.Id,
-                FullName = employee.User.FullName,
-                Email = employee.User.Email,
-                JobTitle = employee.JobTitle,
-                Department = employee.Department != null ? employee.Department.Name : null,
-                AvailabilityPercent = employee.AvailabilityPercent,
-                WorkloadPercent = employee.WorkloadPercent,
-                Skills = employee.EmployeeSkills
-                    .OrderBy(item => item.IsPrimary ? 0 : 1)
-                    .ThenBy(item => item.Skill.Name)
-                    .Select(item => item.Skill.Name)
+                Employee = employee,
+                // On-the-fly calculation for absolute freshness
+                CalculatedWorkload = employee.Assignments
+                    .Where(a => activeStatuses.Contains(a.Status))
+                    .GroupBy(a => a.ProjectId)
+                    .Select(g => g.Sum(x => x.AllocationPercent) > 100m ? 100m : g.Sum(x => x.AllocationPercent))
+                    .Sum()
+            })
+            .Select(item => new EmployeeListItemResponse
+            {
+                Id = item.Employee.Id,
+                FullName = item.Employee.User.FullName,
+                Email = item.Employee.User.Email,
+                JobTitle = item.Employee.JobTitle,
+                Department = item.Employee.Department != null ? item.Employee.Department.Name : null,
+                WorkloadPercent = item.CalculatedWorkload,
+                AvailabilityPercent = Math.Max(0m, 100m - item.CalculatedWorkload),
+                Skills = item.Employee.EmployeeSkills
+                    .OrderBy(es => es.IsPrimary ? 0 : 1)
+                    .ThenBy(es => es.Skill.Name)
+                    .Select(es => es.Skill.Name)
                     .ToList(),
-                AssignedHours = employee.AssignedHours,
-                Phone = employee.Phone,
-                Status = employee.Status.ToString(),
-                HireDate = employee.HireDate,
-                ContractEndDate = employee.Contracts
+                AssignedHours = Math.Round((item.CalculatedWorkload / 100m) * 40m, 2),
+                Phone = item.Employee.Phone,
+                Status = item.Employee.Status.ToString(),
+                WorkloadStatus = (item.CalculatedWorkload <= 30m ? "Available" :
+                                  item.CalculatedWorkload <= 70m ? "Moderate" :
+                                  item.CalculatedWorkload <= 100m ? "Busy" : "Overloaded"),
+                HireDate = item.Employee.HireDate,
+                ContractEndDate = item.Employee.Contracts
                     .Where(c => c.Status == ContractStatus.Active)
                     .OrderByDescending(c => c.EndDate)
                     .Select(c => c.EndDate)
                     .FirstOrDefault(),
-                Assignments = employee.Assignments.Where(a => a.Status == AssignmentStatus.Approved || a.Status == AssignmentStatus.Accepted || a.Status == AssignmentStatus.InProgress || a.Status == AssignmentStatus.Completed).Select(a => new AssignmentListItemResponse
+                Assignments = item.Employee.Assignments
+                    .Where(a => a.Status == AssignmentStatus.Pending || 
+                                a.Status == AssignmentStatus.GmApproved || 
+                                a.Status == AssignmentStatus.Approved || 
+                                a.Status == AssignmentStatus.Accepted || 
+                                a.Status == AssignmentStatus.InProgress)
+                    .Select(a => new AssignmentListItemResponse
                 {
                     Id = a.Id,
                     ProjectId = a.ProjectId,

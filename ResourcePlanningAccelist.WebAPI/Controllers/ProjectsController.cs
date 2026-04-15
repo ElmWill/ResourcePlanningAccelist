@@ -30,6 +30,16 @@ public class ProjectsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("summary")]
+    [Authorize(Policy = AuthorizationPolicyNames.ProjectReadAccess)]
+    public async Task<ActionResult<GetProjectSummaryResponse>> Summary(
+        [FromQuery] GetProjectSummaryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost("create")]
     [Authorize(Policy = AuthorizationPolicyNames.MarketingOnly)]
     public async Task<ActionResult<CreateProjectResponse>> Create(

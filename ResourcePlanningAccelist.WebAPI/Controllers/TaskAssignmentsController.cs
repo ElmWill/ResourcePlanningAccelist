@@ -39,6 +39,21 @@ public class TaskAssignmentsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpDelete("{taskId:guid}")]
+    [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    public async Task<ActionResult<DeleteTaskAssignmentResponse>> Delete(
+        Guid taskId,
+        CancellationToken cancellationToken)
+    {
+        var request = new DeleteTaskAssignmentRequest
+        {
+            TaskId = taskId,
+        };
+
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpGet("list")]
     [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
     public async Task<ActionResult<GetTaskAssignmentsResponse>> List(

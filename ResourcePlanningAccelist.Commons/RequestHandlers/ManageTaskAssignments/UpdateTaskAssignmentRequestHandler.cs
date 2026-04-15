@@ -38,6 +38,18 @@ public class UpdateTaskAssignmentRequestHandler : IRequestHandler<UpdateTaskAssi
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(request.TaskName))
+        {
+            taskAssignment.TaskName = request.TaskName.Trim();
+        }
+
+        if (request.Description is not null)
+        {
+            taskAssignment.Description = string.IsNullOrWhiteSpace(request.Description)
+                ? null
+                : request.Description.Trim();
+        }
+
         // Update priority if provided
         if (!string.IsNullOrEmpty(request.Priority))
         {

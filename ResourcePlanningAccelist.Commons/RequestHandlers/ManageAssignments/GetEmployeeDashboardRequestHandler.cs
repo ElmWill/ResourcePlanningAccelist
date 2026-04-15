@@ -55,7 +55,9 @@ public class GetEmployeeDashboardRequestHandler : IRequestHandler<GetEmployeeDas
                 .ThenInclude(e => e.User)
             .Where(a => projectIds.Contains(a.ProjectId) && 
                 (a.Status == AssignmentStatus.Accepted ||
-                 a.Status == AssignmentStatus.Approved))
+                 a.Status == AssignmentStatus.Approved ||
+                 a.Status == AssignmentStatus.InProgress ||
+                 a.Status == AssignmentStatus.Completed))
             .ToListAsync(cancellationToken);
 
         var pendingStatuses = new[] { AssignmentStatus.Pending, AssignmentStatus.GmApproved, AssignmentStatus.Approved };

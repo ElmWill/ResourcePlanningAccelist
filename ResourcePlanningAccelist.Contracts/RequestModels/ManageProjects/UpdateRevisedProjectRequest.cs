@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageProjects;
 
 namespace ResourcePlanningAccelist.Contracts.RequestModels.ManageProjects;
@@ -20,6 +20,8 @@ public class UpdateRevisedProjectRequest : IRequest<UpdateRevisedProjectResponse
     public DateOnly EndDate { get; set; }
 
     public string? Notes { get; set; }
+
+    public string Status { get; set; } = "Submitted";
 
     public List<Guid> SkillIds { get; set; } = new();
 

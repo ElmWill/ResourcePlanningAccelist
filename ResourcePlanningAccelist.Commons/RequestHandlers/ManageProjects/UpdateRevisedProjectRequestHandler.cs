@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ResourcePlanningAccelist.Constants;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageProjects;
@@ -31,7 +31,7 @@ public class UpdateRevisedProjectRequestHandler : IRequestHandler<UpdateRevisedP
         project.Notes = request.Notes;
         project.StartDate = request.StartDate;
         project.EndDate = request.EndDate;
-        project.Status = ProjectStatus.Submitted;
+        project.Status = Enum.Parse<ProjectStatus>(request.Status, ignoreCase: true);
         project.TotalRequiredResources = request.ResourceRequirements.Sum(r => r.Quantity);
 
         // Update project-level skills

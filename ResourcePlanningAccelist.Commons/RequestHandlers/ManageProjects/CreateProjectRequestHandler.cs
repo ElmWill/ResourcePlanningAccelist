@@ -26,7 +26,7 @@ public class CreateProjectRequestHandler : IRequestHandler<CreateProjectRequest,
             Notes = request.Notes,
             StartDate = request.StartDate,
             EndDate = request.EndDate,
-            Status = ProjectStatus.Draft,
+            Status = Enum.Parse<ProjectStatus>(request.Status, ignoreCase: true),
             TotalRequiredResources = request.ResourceRequirements.Sum(r => r.Quantity)
         };
 

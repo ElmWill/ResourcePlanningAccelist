@@ -243,6 +243,26 @@ internal static class DevelopmentDataSeeder
             IsActive = true
         };
 
+        var pmUser2 = new AppUser
+        {
+            Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            Email = "pm.priya@accelist.local",
+            FullName = "Priya PM",
+            Role = UserRole.Pm,
+            Department = productDepartment,
+            IsActive = true
+        };
+
+        var pmUser3 = new AppUser
+        {
+            Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+            Email = "pm.paul@accelist.local",
+            FullName = "Paul PM",
+            Role = UserRole.Pm,
+            Department = engineeringDepartment,
+            IsActive = true
+        };
+
         var gmUser = new AppUser
         {
             Email = "gm.demo@accelist.local",
@@ -327,6 +347,8 @@ internal static class DevelopmentDataSeeder
         dbContext.Users.AddRange(
             marketingUser,
             pmUser,
+            pmUser2,
+            pmUser3,
             gmUser,
             hrUser,
             backendUser,
@@ -669,7 +691,7 @@ internal static class DevelopmentDataSeeder
         var historicalProject = new Project
         {
             CreatedByUser = marketingUser,
-            PmOwnerUser = pmUser,
+            PmOwnerUser = pmUser2,
             ApprovedByUser = gmUser,
             Name = "Legacy API Stabilization",
             ClientName = "Internal Platform",
@@ -726,7 +748,7 @@ internal static class DevelopmentDataSeeder
         var portalProject = new Project
         {
             CreatedByUser = marketingUser,
-            PmOwnerUser = pmUser,
+            PmOwnerUser = pmUser2,
             ApprovedByUser = gmUser,
             Name = "Customer Portal Improvements",
             ClientName = "Enterprise Customer Success",
@@ -742,7 +764,26 @@ internal static class DevelopmentDataSeeder
             ApprovedAt = now.AddDays(-5)
         };
 
-        dbContext.Projects.AddRange(historicalProject, currentProject, mobileProject, portalProject);
+        var automationProject = new Project
+        {
+            CreatedByUser = marketingUser,
+            PmOwnerUser = pmUser3,
+            ApprovedByUser = gmUser,
+            Name = "Internal Automation Hub",
+            ClientName = "Accelist Internal",
+            Description = "Build workflow automation and reporting for internal operations.",
+            StartDate = today.AddDays(3),
+            EndDate = today.AddMonths(4),
+            Status = ProjectStatus.InProgress,
+            ProgressPercent = 24,
+            RiskLevel = ProjectRiskLevel.Low,
+            ResourceUtilizationPercent = 52,
+            TotalRequiredResources = 3,
+            SubmittedAt = now.AddDays(-8),
+            ApprovedAt = now.AddDays(-7)
+        };
+
+        dbContext.Projects.AddRange(historicalProject, currentProject, mobileProject, portalProject, automationProject);
 
         var historicalBackendRequirement = new ProjectResourceRequirement
         {
@@ -884,6 +925,26 @@ internal static class DevelopmentDataSeeder
             Notes = "Stakeholder cadence and acceptance planning"
         };
 
+        var automationBackendRequirement = new ProjectResourceRequirement
+        {
+            Project = automationProject,
+            RoleName = "Backend Developer",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Mid,
+            SortOrder = 1,
+            Notes = "Internal workflow and reporting APIs"
+        };
+
+        var automationProductRequirement = new ProjectResourceRequirement
+        {
+            Project = automationProject,
+            RoleName = "Product Manager",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Mid,
+            SortOrder = 2,
+            Notes = "Internal process coordination and rollout"
+        };
+
         dbContext.ProjectResourceRequirements.AddRange(
             historicalBackendRequirement,
             historicalFrontendRequirement,
@@ -898,7 +959,9 @@ internal static class DevelopmentDataSeeder
             portalBackendRequirement,
             portalFrontendRequirement,
             portalDesignerRequirement,
-            portalProductRequirement);
+            portalProductRequirement,
+            automationBackendRequirement,
+            automationProductRequirement);
 
         dbContext.ProjectRequirementSkills.AddRange(
             new ProjectRequirementSkill { Requirement = historicalBackendRequirement, Skill = nodeSkill },
@@ -924,7 +987,11 @@ internal static class DevelopmentDataSeeder
             new ProjectRequirementSkill { Requirement = portalDesignerRequirement, Skill = figmaSkill },
             new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = productManagementSkill },
             new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = agileSkill },
-            new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = analyticsSkill });
+            new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = analyticsSkill },
+            new ProjectRequirementSkill { Requirement = automationBackendRequirement, Skill = nodeSkill },
+            new ProjectRequirementSkill { Requirement = automationBackendRequirement, Skill = postgreSqlSkill },
+            new ProjectRequirementSkill { Requirement = automationProductRequirement, Skill = productManagementSkill },
+            new ProjectRequirementSkill { Requirement = automationProductRequirement, Skill = agileSkill });
 
         dbContext.ProjectMilestones.AddRange(
             new ProjectMilestone

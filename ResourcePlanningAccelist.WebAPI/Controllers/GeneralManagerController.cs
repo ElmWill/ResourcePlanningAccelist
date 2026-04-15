@@ -38,6 +38,23 @@ public class GeneralManagerController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("projects/{projectId:guid}/pm-recommendation")]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOnly)]
+    public async Task<ActionResult<GetGeneralManagerProjectPmRecommendationResponse>> GetProjectPmRecommendation(
+        Guid projectId,
+        [FromQuery] int? candidateLimit,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetGeneralManagerProjectPmRecommendationRequest
+        {
+            ProjectId = projectId,
+            CandidateLimit = candidateLimit
+        };
+
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpGet("projects/{projectId:guid}/risk")]
     [Authorize(Policy = AuthorizationPolicyNames.GmOnly)]
     public async Task<ActionResult<GetGeneralManagerProjectRiskResponse>> GetProjectRisk(

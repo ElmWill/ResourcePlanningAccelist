@@ -31,7 +31,7 @@ public class UpdateRevisedProjectRequestHandler : IRequestHandler<UpdateRevisedP
         project.Notes = request.Notes;
         project.StartDate = request.StartDate;
         project.EndDate = request.EndDate;
-        project.Status = ProjectStatus.Draft;
+        project.Status = ProjectStatus.Submitted;
         project.TotalRequiredResources = request.ResourceRequirements.Sum(r => r.Quantity);
 
         // Update project-level skills

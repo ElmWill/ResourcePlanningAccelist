@@ -21,8 +21,6 @@ public class CreateProjectRequest : IRequest<CreateProjectResponse>
 
     public string? Notes { get; set; }
 
-    public string Status { get; set; } = string.Empty;
-
     public List<Guid> SkillIds { get; set; } = new();
 
     public List<CreateProjectResourceRequirementItem> ResourceRequirements { get; set; } = new();

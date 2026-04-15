@@ -80,6 +80,26 @@ public class UserController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPut("update-password")]
+    public async Task<ActionResult<UpdateUserPasswordResponse>> UpdatePassword(
+        [FromBody] UpdateUserPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = await ResolveCurrentUserIdAsync(cancellationToken);
+        if (userId == null)
+        {
+            return Unauthorized("Unable to resolve user identity.");
+        }
+
+        request.UserId = userId.Value;
+        var result = await _mediator.Send(request, cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+        return Ok(result);
+    }
+
     /// <summary>
     /// Resolves the current user's database ID from the JWT claims.
     /// In development mode, the NameIdentifier is a username string (not a GUID),

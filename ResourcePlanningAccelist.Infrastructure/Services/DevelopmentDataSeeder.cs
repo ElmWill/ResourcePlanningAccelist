@@ -278,7 +278,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Priya PM",
             Role = UserRole.Pm,
             Department = productDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var pmUser3 = new AppUser
@@ -288,7 +289,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Paul PM",
             Role = UserRole.Pm,
             Department = productDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var gmUser = new AppUser

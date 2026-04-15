@@ -4,7 +4,7 @@ using ResourcePlanningAccelist.Entities;
 
 namespace ResourcePlanningAccelist.Commons.RequestHandlers.ManageAssignments;
 
-internal static class AssignmentWorkloadUpdater
+public static class AssignmentWorkloadUpdater
 {
     private static readonly AssignmentStatus[] ActiveAssignmentStatuses =
     {

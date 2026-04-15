@@ -7,6 +7,8 @@ public class CreateProjectRequest : IRequest<CreateProjectResponse>
 {
     public Guid CreatedByUserId { get; set; }
 
+    public string? Status { get; set; }
+
     public string Name { get; set; } = string.Empty;
 
     public string? ClientName { get; set; }

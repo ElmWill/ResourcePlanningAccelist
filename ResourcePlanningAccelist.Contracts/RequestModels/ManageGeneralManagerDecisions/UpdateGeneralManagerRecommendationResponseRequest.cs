@@ -16,4 +16,6 @@ public class UpdateGeneralManagerRecommendationResponseRequest : IRequest<Update
     public string Details { get; set; } = string.Empty;
 
     public string Action { get; set; } = string.Empty;
+
+    public Guid SubmittedByUserId { get; set; }
 }

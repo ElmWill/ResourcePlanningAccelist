@@ -6,6 +6,7 @@ using ResourcePlanningAccelist.Contracts.RequestModels.ManageGeneralManagerPredi
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageGeneralManagerDecisions;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageGeneralManagerPredictions;
 using ResourcePlanningAccelist.WebAPI.AuthorizationPolicies;
+using System.Security.Claims;
 
 namespace ResourcePlanningAccelist.WebAPI.Controllers;
 
@@ -95,6 +96,12 @@ public class GeneralManagerController : ControllerBase
         [FromBody] UpdateGeneralManagerRecommendationResponseRequest request,
         CancellationToken cancellationToken)
     {
+        var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(nameIdentifier, out var userId))
+        {
+            request.SubmittedByUserId = userId;
+        }
+
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }

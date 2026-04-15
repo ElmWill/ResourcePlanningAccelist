@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageHumanResources;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageHumanResources;
 using ResourcePlanningAccelist.WebAPI.AuthorizationPolicies;
+using System.Security.Claims;
 
 namespace ResourcePlanningAccelist.WebAPI.Controllers;
 
@@ -35,6 +36,12 @@ public class HumanResourceController : ControllerBase
         [FromBody] ExecuteGmDecisionRequest request,
         CancellationToken cancellationToken)
     {
+        var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(nameIdentifier, out var userId))
+        {
+            request.ExecutedByUserId = userId;
+        }
+
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }

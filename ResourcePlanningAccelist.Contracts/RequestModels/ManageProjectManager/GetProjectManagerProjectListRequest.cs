@@ -5,7 +5,7 @@ namespace ResourcePlanningAccelist.Contracts.RequestModels.ManageProjectManager;
 
 public class GetProjectManagerProjectListRequest : IRequest<GetProjectManagerProjectListResponse>
 {
-    public Guid PmUserId { get; set; }
+    public Guid? PmUserId { get; set; }
 
     public string? Status { get; set; }
 

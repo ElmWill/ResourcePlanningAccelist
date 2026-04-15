@@ -21,7 +21,7 @@ public class GetEmployeeDashboardRequestHandler : IRequestHandler<GetEmployeeDas
         var assignments = await _dbContext.Assignments
             .AsNoTracking()
             .Include(a => a.Project)
-            .Where(a => a.EmployeeId == request.EmployeeId)
+            .Where(a => a.Employee.UserId == request.EmployeeId)
             .ToListAsync(cancellationToken);
 
         var pendingStatuses = new[] { AssignmentStatus.Pending, AssignmentStatus.GmApproved, AssignmentStatus.Approved };

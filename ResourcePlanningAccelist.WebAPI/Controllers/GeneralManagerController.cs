@@ -6,6 +6,7 @@ using ResourcePlanningAccelist.Contracts.RequestModels.ManageGeneralManagerPredi
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageGeneralManagerDecisions;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageGeneralManagerPredictions;
 using ResourcePlanningAccelist.WebAPI.AuthorizationPolicies;
+using System.Security.Claims;
 
 namespace ResourcePlanningAccelist.WebAPI.Controllers;
 
@@ -29,6 +30,23 @@ public class GeneralManagerController : ControllerBase
         CancellationToken cancellationToken)
     {
         var request = new GetGeneralManagerProjectPredictionRequest
+        {
+            ProjectId = projectId,
+            CandidateLimit = candidateLimit
+        };
+
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("projects/{projectId:guid}/pm-recommendation")]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOnly)]
+    public async Task<ActionResult<GetGeneralManagerProjectPmRecommendationResponse>> GetProjectPmRecommendation(
+        Guid projectId,
+        [FromQuery] int? candidateLimit,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetGeneralManagerProjectPmRecommendationRequest
         {
             ProjectId = projectId,
             CandidateLimit = candidateLimit
@@ -71,7 +89,7 @@ public class GeneralManagerController : ControllerBase
     }
 
     [HttpGet("contract-decisions")]
-    [Authorize(Policy = AuthorizationPolicyNames.GmOnly)]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
     public async Task<ActionResult<GetGeneralManagerContractDecisionSummaryResponse>> GetContractDecisions(
         CancellationToken cancellationToken)
     {
@@ -80,7 +98,7 @@ public class GeneralManagerController : ControllerBase
         return Ok(result);
     }
     [HttpGet("decisions")]
-    [Authorize(Policy = AuthorizationPolicyNames.GmOnly)]
+    [Authorize(Policy = AuthorizationPolicyNames.HrOrGm)]
     public async Task<ActionResult<GetGeneralManagerDecisionListResponse>> GetDecisions(
         CancellationToken cancellationToken)
     {
@@ -95,6 +113,12 @@ public class GeneralManagerController : ControllerBase
         [FromBody] UpdateGeneralManagerRecommendationResponseRequest request,
         CancellationToken cancellationToken)
     {
+        var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(nameIdentifier, out var userId))
+        {
+            request.SubmittedByUserId = userId;
+        }
+
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }

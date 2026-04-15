@@ -26,7 +26,7 @@ public class GetProjectManagerProjectTeamRequestHandler : IRequestHandler<GetPro
         };
 
         var projectExists = await _dbContext.Projects.AnyAsync(
-            item => item.Id == request.ProjectId && item.PmOwnerUserId == request.PmUserId,
+            item => item.Id == request.ProjectId && (request.PmUserId == null || request.PmUserId == Guid.Empty || item.PmOwnerUserId == request.PmUserId),
             cancellationToken);
 
         if (!projectExists)

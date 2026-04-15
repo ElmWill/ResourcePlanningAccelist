@@ -1,18 +1,31 @@
-using Microsoft.AspNetCore.Authentication;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
 using ResourcePlanningAccelist.Constants;
 
 namespace ResourcePlanningAccelist.WebAPI.AuthorizationPolicies;
 
 public static class RoleAuthorizationPolicyExtensions
 {
-    public static IServiceCollection AddRoleAuthorizationPolicies(this IServiceCollection services)
+    public static IServiceCollection AddRoleAuthorizationPolicies(this IServiceCollection services, IConfiguration configuration)
     {
         services
-            .AddAuthentication(DevelopmentAuthenticationHandler.SchemeName)
-            .AddScheme<AuthenticationSchemeOptions, DevelopmentAuthenticationHandler>(
-                DevelopmentAuthenticationHandler.SchemeName,
-                _ => { });
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                var secretKey = configuration["Jwt:SecretKey"] ?? "AccelistResourcePlanningProjectSecretKey";
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = configuration["Jwt:Issuer"] ?? "ResourcePlanningAccelist",
+                    ValidAudience = configuration["Jwt:Audience"] ?? "ResourcePlanningAccelist",
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+                };
+            });
 
         services.AddAuthorization(options =>
         {

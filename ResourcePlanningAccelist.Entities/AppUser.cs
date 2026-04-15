@@ -9,6 +9,8 @@ public class AppUser : AuditableEntity
     [StringLength(320)]
     public string Email { get; set; } = string.Empty;
 
+    public string? PasswordHash { get; set; }
+
     [StringLength(200)]
     public string FullName { get; set; } = string.Empty;
 

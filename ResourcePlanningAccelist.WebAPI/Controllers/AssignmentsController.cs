@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageAssignments;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageAssignments;
 using ResourcePlanningAccelist.WebAPI.AuthorizationPolicies;
+using System.Security.Claims;
 
 namespace ResourcePlanningAccelist.WebAPI.Controllers;
 
@@ -20,11 +21,17 @@ public class AssignmentsController : ControllerBase
     }
 
     [HttpPost("create")]
-    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    [Authorize(Policy = AuthorizationPolicyNames.PmHrOrGm)]
     public async Task<ActionResult<CreateAssignmentResponse>> Create(
         [FromBody] CreateAssignmentRequest request,
         CancellationToken cancellationToken)
     {
+        var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(nameIdentifier, out var userId))
+        {
+            request.AssignedByUserId = userId;
+        }
+
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }
@@ -51,7 +58,7 @@ public class AssignmentsController : ControllerBase
     }
 
     [HttpPost("update-status")]
-    [Authorize(Policy = AuthorizationPolicyNames.PmHrOrGm)]
+    [Authorize(Policy = AuthorizationPolicyNames.AnyRole)]
     public async Task<ActionResult<UpdateAssignmentStatusResponse>> UpdateStatus(
         [FromBody] UpdateAssignmentStatusRequest request,
         CancellationToken cancellationToken)
@@ -71,7 +78,7 @@ public class AssignmentsController : ControllerBase
     }
 
     [HttpPost("split-workload")]
-    [Authorize(Policy = AuthorizationPolicyNames.PmOrHr)]
+    [Authorize(Policy = AuthorizationPolicyNames.PmHrOrGm)]
     public async Task<ActionResult<SplitAssignmentWorkloadResponse>> SplitWorkload(
         [FromBody] SplitAssignmentWorkloadRequest request,
         CancellationToken cancellationToken)

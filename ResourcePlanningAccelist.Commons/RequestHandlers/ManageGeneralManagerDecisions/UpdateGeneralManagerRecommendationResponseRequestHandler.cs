@@ -52,6 +52,7 @@ public class UpdateGeneralManagerRecommendationResponseRequestHandler : IRequest
                 Title = request.Title,
                 Details = $"{recommendationMarker} {request.Details}".Trim(),
                 SubmittedAt = DateTimeOffset.UtcNow,
+                SubmittedByUserId = request.SubmittedByUserId
             };
 
             _dbContext.GmDecisions.Add(decision);
@@ -61,6 +62,7 @@ public class UpdateGeneralManagerRecommendationResponseRequestHandler : IRequest
             decision.Title = request.Title;
             decision.Details = $"{recommendationMarker} {request.Details}".Trim();
             decision.DecisionType = decisionType;
+            decision.SubmittedByUserId = request.SubmittedByUserId;
         }
 
         // Link Affected Employees if metadata is available

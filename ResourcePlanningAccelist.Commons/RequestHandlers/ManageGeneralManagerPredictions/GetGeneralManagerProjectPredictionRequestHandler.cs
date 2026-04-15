@@ -101,6 +101,23 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
             })
             .ToDictionaryAsync(item => item.RoleName, item => item.AssignedCount, cancellationToken);
 
+        var existingTeamMemberEmployeeIds = await _dbContext.Assignments
+            .AsNoTracking()
+            .Where(item => item.ProjectId == project.Id)
+            .Where(item => ActiveAssignmentStatuses.Contains(item.Status))
+            .Where(item => item.AllocationPercent > 0)
+            .Select(item => item.EmployeeId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var existingTeamMemberSet = existingTeamMemberEmployeeIds.Count == 0
+            ? []
+            : existingTeamMemberEmployeeIds.ToHashSet();
+
+        employees = employees
+            .Where(item => !existingTeamMemberSet.Contains(item.Id))
+            .ToList();
+
         var timelineWorkloadByEmployee = await _dbContext.Assignments
             .AsNoTracking()
             .Where(item => ActiveAssignmentStatuses.Contains(item.Status))
@@ -257,8 +274,8 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
                 .ToList()
             : candidateResponses;
 
-        var recommendationLimit = Math.Min(candidateLimit, remainingSlots);
-        var recommendedCandidates = eligibleCandidateResponses.Take(recommendationLimit).ToList();
+        var recommendationLimit = Math.Min(candidateLimit, candidateResponses.Count);
+        var recommendedCandidates = candidateResponses.Take(recommendationLimit).ToList();
         var bestCandidateScore = eligibleCandidateResponses.Count > 0 ? eligibleCandidateResponses[0].FitScore : 0m;
         var coverageScore = requirement.Quantity > 0
             ? ((fulfilledSlots * 100m) + eligibleCandidateResponses.Take(remainingSlots).Sum(item => item.FitScore)) / requirement.Quantity

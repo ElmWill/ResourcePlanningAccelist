@@ -23,6 +23,20 @@ public class UserController : ControllerBase
         _dbContext = dbContext;
     }
 
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public async Task<ActionResult<LoginResponse>> Login(
+        [FromBody] LoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        if (!result.Success)
+        {
+            return Unauthorized(result);
+        }
+        return Ok(result);
+    }
+
     [HttpGet("get-profile")]
     public async Task<ActionResult<GetUserProfileResponse>> GetProfile(
         CancellationToken cancellationToken)
@@ -36,6 +50,18 @@ public class UserController : ControllerBase
         var request = new GetUserProfileRequest { UserId = userId.Value };
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
+    }
+
+    [HttpGet("debug-claims")]
+    public IActionResult GetDebugClaims()
+    {
+        var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+        return Ok(new
+        {
+            IsAuthenticated = User.Identity?.IsAuthenticated,
+            AuthenticationType = User.Identity?.AuthenticationType,
+            Claims = claims
+        });
     }
 
     [HttpPut("update-profile")]

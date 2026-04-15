@@ -19,7 +19,8 @@ public class GetProjectTimelineTaskListRequestHandler : IRequestHandler<GetProje
     {
         var project = await _dbContext.Projects
             .AsNoTracking()
-            .Where(item => item.Id == request.ProjectId && item.PmOwnerUserId == request.PmUserId)
+            .Where(item => item.Id == request.ProjectId)
+            .Where(item => request.PmUserId == null || request.PmUserId == Guid.Empty || item.PmOwnerUserId == request.PmUserId)
             .Select(item => new { item.Id, item.StartDate })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new KeyNotFoundException("Project not found for this project manager.");

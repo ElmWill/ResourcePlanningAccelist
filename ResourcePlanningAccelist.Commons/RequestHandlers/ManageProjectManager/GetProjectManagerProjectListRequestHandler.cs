@@ -27,8 +27,12 @@ public class GetProjectManagerProjectListRequestHandler : IRequestHandler<GetPro
 
         var query = _dbContext.Projects
             .AsNoTracking()
-            .Where(item => item.PmOwnerUserId == request.PmUserId)
             .AsQueryable();
+
+        if (request.PmUserId != null && request.PmUserId != Guid.Empty)
+        {
+            query = query.Where(item => item.PmOwnerUserId == request.PmUserId);
+        }
 
         if (!string.IsNullOrWhiteSpace(request.Status) && Enum.TryParse<ProjectStatus>(request.Status, true, out var parsedStatus))
         {

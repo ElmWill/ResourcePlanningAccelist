@@ -39,8 +39,23 @@ public class TaskAssignmentsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("list")]
+    [HttpDelete("{taskId:guid}")]
     [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    public async Task<ActionResult<DeleteTaskAssignmentResponse>> Delete(
+        Guid taskId,
+        CancellationToken cancellationToken)
+    {
+        var request = new DeleteTaskAssignmentRequest
+        {
+            TaskId = taskId,
+        };
+
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("list")]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOrPm)]
     public async Task<ActionResult<GetTaskAssignmentsResponse>> List(
         [FromQuery] Guid pmUserId,
         [FromQuery] Guid? projectId,
@@ -61,7 +76,7 @@ public class TaskAssignmentsController : ControllerBase
     }
 
     [HttpGet("projects/{projectId:guid}")]
-    [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOrPm)]
     public async Task<ActionResult<GetTaskAssignmentsResponse>> GetByProject(
         Guid projectId,
         [FromQuery] Guid pmUserId,

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using static BCrypt.Net.BCrypt;
 using ResourcePlanningAccelist.Constants;
 using ResourcePlanningAccelist.Entities;
 
@@ -21,7 +22,23 @@ internal static class DevelopmentDataSeeder
 
         if (hasExistingData)
         {
-            logger.LogInformation("Existing data found. Running supplemental employee top-up only.");
+            logger.LogInformation("Existing data found. Checking for missing passwords and running supplemental top-up.");
+
+            // Fix any users missing passwords (one-time migration for existing dev data)
+            var usersWithoutPassword = await dbContext.Users
+                .Where(u => string.IsNullOrEmpty(u.PasswordHash))
+                .ToListAsync(cancellationToken);
+
+            if (usersWithoutPassword.Any())
+            {
+                logger.LogInformation("Applying default 'password123' to {Count} users.", usersWithoutPassword.Count);
+                var defaultHash = EnhancedHashPassword("password123");
+                foreach (var user in usersWithoutPassword)
+                {
+                    user.PasswordHash = defaultHash;
+                }
+            }
+
             await SeedSupplementalEmployeesForExistingDataAsync();
             await dbContext.SaveChangesAsync(cancellationToken);
             return;
@@ -107,13 +124,22 @@ internal static class DevelopmentDataSeeder
                     var availabilityPercent = Math.Max(0, 100 - workloadPercent);
                     var assignedHours = Math.Round((decimal)workloadPercent / 100m * 8m, 1);
 
+                    var role = department.Name switch
+                    {
+                        "Marketing" => UserRole.Marketing,
+                        "Human Resources" => UserRole.Hr,
+                        "Product" when jobTitle.Contains("Product Manager", StringComparison.OrdinalIgnoreCase) => UserRole.Pm,
+                        _ => UserRole.Employee
+                    };
+
                     var user = new AppUser
                     {
                         Email = email,
                         FullName = $"{namePrefix} Staff {candidateSequence:00}",
-                        Role = UserRole.Employee,
+                        Role = role,
                         Department = department,
-                        IsActive = true
+                        IsActive = true,
+                        PasswordHash = EnhancedHashPassword("password123")
                     };
 
                     var employee = new Employee
@@ -230,7 +256,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Maya Marketing",
             Role = UserRole.Marketing,
             Department = marketingDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var pmUser = new AppUser
@@ -239,8 +266,31 @@ internal static class DevelopmentDataSeeder
             Email = "pm.demo@accelist.local",
             FullName = "Peter PM",
             Role = UserRole.Pm,
-            Department = engineeringDepartment,
-            IsActive = true
+            Department = productDepartment,
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
+        };
+
+        var pmUser2 = new AppUser
+        {
+            Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            Email = "pm.priya@accelist.local",
+            FullName = "Priya PM",
+            Role = UserRole.Pm,
+            Department = productDepartment,
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
+        };
+
+        var pmUser3 = new AppUser
+        {
+            Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+            Email = "pm.paul@accelist.local",
+            FullName = "Paul PM",
+            Role = UserRole.Pm,
+            Department = productDepartment,
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var gmUser = new AppUser
@@ -249,7 +299,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Grace GM",
             Role = UserRole.Gm,
             Department = productDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var hrUser = new AppUser
@@ -258,7 +309,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Helen HR",
             Role = UserRole.Hr,
             Department = hrDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var backendUser = new AppUser
@@ -267,7 +319,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Ben Backend",
             Role = UserRole.Employee,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var frontendUser = new AppUser
@@ -276,7 +329,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Fiona Frontend",
             Role = UserRole.Employee,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var designerUser = new AppUser
@@ -285,16 +339,18 @@ internal static class DevelopmentDataSeeder
             FullName = "Diana Designer",
             Role = UserRole.Employee,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var productUser = new AppUser
         {
             Email = "product.demo@accelist.local",
             FullName = "Paula Product",
-            Role = UserRole.Employee,
+            Role = UserRole.Pm,
             Department = productDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var qaUser = new AppUser
@@ -303,7 +359,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Quinn QA",
             Role = UserRole.Employee,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var devopsUser = new AppUser
@@ -312,7 +369,8 @@ internal static class DevelopmentDataSeeder
             FullName = "Devon Ops",
             Role = UserRole.Employee,
             Department = engineeringDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         var analystUser = new AppUser
@@ -321,12 +379,15 @@ internal static class DevelopmentDataSeeder
             FullName = "Avery Analyst",
             Role = UserRole.Employee,
             Department = productDepartment,
-            IsActive = true
+            IsActive = true,
+            PasswordHash = EnhancedHashPassword("password123")
         };
 
         dbContext.Users.AddRange(
             marketingUser,
             pmUser,
+            pmUser2,
+            pmUser3,
             gmUser,
             hrUser,
             backendUser,
@@ -572,13 +633,22 @@ internal static class DevelopmentDataSeeder
                 var availabilityPercent = Math.Max(0, 100 - workloadPercent);
                 var assignedHours = Math.Round((decimal)workloadPercent / 100m * 8m, 1);
 
+                var role = department.Name switch
+                {
+                    "Marketing" => UserRole.Marketing,
+                    "Human Resources" => UserRole.Hr,
+                    "Product" when primaryJobTitle.Contains("Product Manager", StringComparison.OrdinalIgnoreCase) => UserRole.Pm,
+                    _ => UserRole.Employee
+                };
+
                 var user = new AppUser
                 {
                     Email = $"{emailPrefix}.staff{sequence:00}@accelist.local",
                     FullName = $"{namePrefix} Staff {sequence:00}",
-                    Role = UserRole.Employee,
+                    Role = role,
                     Department = department,
-                    IsActive = true
+                    IsActive = true,
+                    PasswordHash = EnhancedHashPassword("password123")
                 };
 
                 var employee = new Employee
@@ -669,7 +739,7 @@ internal static class DevelopmentDataSeeder
         var historicalProject = new Project
         {
             CreatedByUser = marketingUser,
-            PmOwnerUser = pmUser,
+            PmOwnerUser = pmUser2,
             ApprovedByUser = gmUser,
             Name = "Legacy API Stabilization",
             ClientName = "Internal Platform",
@@ -726,7 +796,7 @@ internal static class DevelopmentDataSeeder
         var portalProject = new Project
         {
             CreatedByUser = marketingUser,
-            PmOwnerUser = pmUser,
+            PmOwnerUser = pmUser2,
             ApprovedByUser = gmUser,
             Name = "Customer Portal Improvements",
             ClientName = "Enterprise Customer Success",
@@ -742,7 +812,26 @@ internal static class DevelopmentDataSeeder
             ApprovedAt = now.AddDays(-5)
         };
 
-        dbContext.Projects.AddRange(historicalProject, currentProject, mobileProject, portalProject);
+        var automationProject = new Project
+        {
+            CreatedByUser = marketingUser,
+            PmOwnerUser = pmUser3,
+            ApprovedByUser = gmUser,
+            Name = "Internal Automation Hub",
+            ClientName = "Accelist Internal",
+            Description = "Build workflow automation and reporting for internal operations.",
+            StartDate = today.AddDays(3),
+            EndDate = today.AddMonths(4),
+            Status = ProjectStatus.InProgress,
+            ProgressPercent = 24,
+            RiskLevel = ProjectRiskLevel.Low,
+            ResourceUtilizationPercent = 52,
+            TotalRequiredResources = 3,
+            SubmittedAt = now.AddDays(-8),
+            ApprovedAt = now.AddDays(-7)
+        };
+
+        dbContext.Projects.AddRange(historicalProject, currentProject, mobileProject, portalProject, automationProject);
 
         var historicalBackendRequirement = new ProjectResourceRequirement
         {
@@ -884,6 +973,26 @@ internal static class DevelopmentDataSeeder
             Notes = "Stakeholder cadence and acceptance planning"
         };
 
+        var automationBackendRequirement = new ProjectResourceRequirement
+        {
+            Project = automationProject,
+            RoleName = "Backend Developer",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Mid,
+            SortOrder = 1,
+            Notes = "Internal workflow and reporting APIs"
+        };
+
+        var automationProductRequirement = new ProjectResourceRequirement
+        {
+            Project = automationProject,
+            RoleName = "Product Manager",
+            Quantity = 1,
+            ExperienceLevel = ExperienceLevel.Mid,
+            SortOrder = 2,
+            Notes = "Internal process coordination and rollout"
+        };
+
         dbContext.ProjectResourceRequirements.AddRange(
             historicalBackendRequirement,
             historicalFrontendRequirement,
@@ -898,7 +1007,9 @@ internal static class DevelopmentDataSeeder
             portalBackendRequirement,
             portalFrontendRequirement,
             portalDesignerRequirement,
-            portalProductRequirement);
+            portalProductRequirement,
+            automationBackendRequirement,
+            automationProductRequirement);
 
         dbContext.ProjectRequirementSkills.AddRange(
             new ProjectRequirementSkill { Requirement = historicalBackendRequirement, Skill = nodeSkill },
@@ -924,7 +1035,11 @@ internal static class DevelopmentDataSeeder
             new ProjectRequirementSkill { Requirement = portalDesignerRequirement, Skill = figmaSkill },
             new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = productManagementSkill },
             new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = agileSkill },
-            new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = analyticsSkill });
+            new ProjectRequirementSkill { Requirement = portalProductRequirement, Skill = analyticsSkill },
+            new ProjectRequirementSkill { Requirement = automationBackendRequirement, Skill = nodeSkill },
+            new ProjectRequirementSkill { Requirement = automationBackendRequirement, Skill = postgreSqlSkill },
+            new ProjectRequirementSkill { Requirement = automationProductRequirement, Skill = productManagementSkill },
+            new ProjectRequirementSkill { Requirement = automationProductRequirement, Skill = agileSkill });
 
         dbContext.ProjectMilestones.AddRange(
             new ProjectMilestone

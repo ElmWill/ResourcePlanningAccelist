@@ -123,14 +123,15 @@ public class UpdateRevisedProjectRequestHandler : IRequestHandler<UpdateRevisedP
                 _dbContext.ProjectResourceRequirements.Add(newRequirement);
 
                 // Add skills for the new requirement
-                foreach (var skillId in item.SkillIds)
-                {
-                    _dbContext.ProjectRequirementSkills.Add(new ProjectRequirementSkill
+                var skillsToAdd = item.SkillIds
+                    .Select(skillId => new ProjectRequirementSkill
                     {
                         RequirementId = newRequirement.Id,
                         SkillId = skillId
-                    });
-                }
+                    })
+                    .ToList();
+
+                _dbContext.ProjectRequirementSkills.AddRange(skillsToAdd);
             }
         }
     }

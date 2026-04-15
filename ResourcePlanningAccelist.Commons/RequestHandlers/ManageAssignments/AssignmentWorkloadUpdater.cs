@@ -17,7 +17,6 @@ internal static class AssignmentWorkloadUpdater
 
     private static readonly ResourcePlanningAccelist.Entities.TaskStatus[] ActiveTaskStatuses =
     {
-        ResourcePlanningAccelist.Entities.TaskStatus.Pending,
         ResourcePlanningAccelist.Entities.TaskStatus.InProgress,
     };
 

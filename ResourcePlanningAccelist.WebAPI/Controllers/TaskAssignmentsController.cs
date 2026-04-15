@@ -55,7 +55,7 @@ public class TaskAssignmentsController : ControllerBase
     }
 
     [HttpGet("list")]
-    [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOrPm)]
     public async Task<ActionResult<GetTaskAssignmentsResponse>> List(
         [FromQuery] Guid pmUserId,
         [FromQuery] Guid? projectId,
@@ -76,7 +76,7 @@ public class TaskAssignmentsController : ControllerBase
     }
 
     [HttpGet("projects/{projectId:guid}")]
-    [Authorize(Policy = AuthorizationPolicyNames.PmOnly)]
+    [Authorize(Policy = AuthorizationPolicyNames.GmOrPm)]
     public async Task<ActionResult<GetTaskAssignmentsResponse>> GetByProject(
         Guid projectId,
         [FromQuery] Guid pmUserId,

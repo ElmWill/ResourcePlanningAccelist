@@ -91,8 +91,6 @@ public class UpdateAssignmentStatusRequestHandler : IRequestHandler<UpdateAssign
                 if (!hasUnacceptedAssignments)
                 {
                     project.Status = ProjectStatus.InProgress;
-                    // Optional: If progress was null/zero, initialize it
-                    if (project.ProgressPercent == 0) project.ProgressPercent = 5; 
                 }
             }
         }

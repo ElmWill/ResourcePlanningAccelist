@@ -50,6 +50,19 @@ public class UpdateProjectStatusRequestHandler : IRequestHandler<UpdateProjectSt
             {
                 throw new KeyNotFoundException("Recommended PM not found.");
             }
+
+            var activePmProjectCount = await _dbContext.Projects
+                .AsNoTracking()
+                .CountAsync(item =>
+                    item.PmOwnerUserId == project.PmOwnerUserId &&
+                    item.Id != project.Id &&
+                    (item.Status == ProjectStatus.Assigned || item.Status == ProjectStatus.InProgress),
+                    cancellationToken);
+
+            if (activePmProjectCount >= 2)
+            {
+                throw new InvalidOperationException("This project manager can only hold 2 active projects at a time.");
+            }
         }
 
         if (parsedStatus == ProjectStatus.Rejected)

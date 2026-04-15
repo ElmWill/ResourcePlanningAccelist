@@ -124,11 +124,19 @@ internal static class DevelopmentDataSeeder
                     var availabilityPercent = Math.Max(0, 100 - workloadPercent);
                     var assignedHours = Math.Round((decimal)workloadPercent / 100m * 8m, 1);
 
+                    var role = department.Name switch
+                    {
+                        "Marketing" => UserRole.Marketing,
+                        "Human Resources" => UserRole.Hr,
+                        "Product" when jobTitle.Contains("Product Manager", StringComparison.OrdinalIgnoreCase) => UserRole.Pm,
+                        _ => UserRole.Employee
+                    };
+
                     var user = new AppUser
                     {
                         Email = email,
                         FullName = $"{namePrefix} Staff {candidateSequence:00}",
-                        Role = UserRole.Employee,
+                        Role = role,
                         Department = department,
                         IsActive = true,
                         PasswordHash = EnhancedHashPassword("password123")
@@ -258,7 +266,7 @@ internal static class DevelopmentDataSeeder
             Email = "pm.demo@accelist.local",
             FullName = "Peter PM",
             Role = UserRole.Pm,
-            Department = engineeringDepartment,
+            Department = productDepartment,
             IsActive = true,
             PasswordHash = EnhancedHashPassword("password123")
         };
@@ -279,7 +287,7 @@ internal static class DevelopmentDataSeeder
             Email = "pm.paul@accelist.local",
             FullName = "Paul PM",
             Role = UserRole.Pm,
-            Department = engineeringDepartment,
+            Department = productDepartment,
             IsActive = true
         };
 
@@ -337,7 +345,7 @@ internal static class DevelopmentDataSeeder
         {
             Email = "product.demo@accelist.local",
             FullName = "Paula Product",
-            Role = UserRole.Employee,
+            Role = UserRole.Pm,
             Department = productDepartment,
             IsActive = true,
             PasswordHash = EnhancedHashPassword("password123")
@@ -623,11 +631,19 @@ internal static class DevelopmentDataSeeder
                 var availabilityPercent = Math.Max(0, 100 - workloadPercent);
                 var assignedHours = Math.Round((decimal)workloadPercent / 100m * 8m, 1);
 
+                var role = department.Name switch
+                {
+                    "Marketing" => UserRole.Marketing,
+                    "Human Resources" => UserRole.Hr,
+                    "Product" when primaryJobTitle.Contains("Product Manager", StringComparison.OrdinalIgnoreCase) => UserRole.Pm,
+                    _ => UserRole.Employee
+                };
+
                 var user = new AppUser
                 {
                     Email = $"{emailPrefix}.staff{sequence:00}@accelist.local",
                     FullName = $"{namePrefix} Staff {sequence:00}",
-                    Role = UserRole.Employee,
+                    Role = role,
                     Department = department,
                     IsActive = true,
                     PasswordHash = EnhancedHashPassword("password123")

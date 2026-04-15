@@ -274,8 +274,8 @@ public class GetGeneralManagerProjectPredictionRequestHandler : IRequestHandler<
                 .ToList()
             : candidateResponses;
 
-        var recommendationLimit = Math.Min(candidateLimit, remainingSlots);
-        var recommendedCandidates = eligibleCandidateResponses.Take(recommendationLimit).ToList();
+        var recommendationLimit = Math.Min(candidateLimit, candidateResponses.Count);
+        var recommendedCandidates = candidateResponses.Take(recommendationLimit).ToList();
         var bestCandidateScore = eligibleCandidateResponses.Count > 0 ? eligibleCandidateResponses[0].FitScore : 0m;
         var coverageScore = requirement.Quantity > 0
             ? ((fulfilledSlots * 100m) + eligibleCandidateResponses.Take(remainingSlots).Sum(item => item.FitScore)) / requirement.Quantity

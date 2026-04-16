@@ -18,7 +18,7 @@ public class GetProjectMilestoneListRequestHandler : IRequestHandler<GetProjectM
     public async Task<GetProjectMilestoneListResponse> Handle(GetProjectMilestoneListRequest request, CancellationToken cancellationToken)
     {
         var projectExists = await _dbContext.Projects.AnyAsync(
-            item => item.Id == request.ProjectId && item.PmOwnerUserId == request.PmUserId,
+            item => item.Id == request.ProjectId && (request.PmUserId == null || request.PmUserId == Guid.Empty || item.PmOwnerUserId == request.PmUserId),
             cancellationToken);
 
         if (!projectExists)

@@ -7,6 +7,8 @@ public class CreateProjectRequest : IRequest<CreateProjectResponse>
 {
     public Guid CreatedByUserId { get; set; }
 
+    public string? Status { get; set; }
+
     public string Name { get; set; } = string.Empty;
 
     public string? ClientName { get; set; }
@@ -18,8 +20,6 @@ public class CreateProjectRequest : IRequest<CreateProjectResponse>
     public DateOnly EndDate { get; set; }
 
     public string? Notes { get; set; }
-
-    public string Status { get; set; } = string.Empty;
 
     public List<Guid> SkillIds { get; set; } = new();
 

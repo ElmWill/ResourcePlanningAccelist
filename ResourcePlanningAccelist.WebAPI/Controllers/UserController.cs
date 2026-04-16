@@ -23,6 +23,20 @@ public class UserController : ControllerBase
         _dbContext = dbContext;
     }
 
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public async Task<ActionResult<LoginResponse>> Login(
+        [FromBody] LoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        if (!result.Success)
+        {
+            return Unauthorized(result);
+        }
+        return Ok(result);
+    }
+
     [HttpGet("get-profile")]
     public async Task<ActionResult<GetUserProfileResponse>> GetProfile(
         CancellationToken cancellationToken)
@@ -38,6 +52,18 @@ public class UserController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("debug-claims")]
+    public IActionResult GetDebugClaims()
+    {
+        var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+        return Ok(new
+        {
+            IsAuthenticated = User.Identity?.IsAuthenticated,
+            AuthenticationType = User.Identity?.AuthenticationType,
+            Claims = claims
+        });
+    }
+
     [HttpPut("update-profile")]
     public async Task<ActionResult<UpdateUserProfileResponse>> UpdateProfile(
         [FromBody] UpdateUserProfileRequest request,
@@ -51,6 +77,26 @@ public class UserController : ControllerBase
 
         request.UserId = userId.Value;
         var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPut("update-password")]
+    public async Task<ActionResult<UpdateUserPasswordResponse>> UpdatePassword(
+        [FromBody] UpdateUserPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = await ResolveCurrentUserIdAsync(cancellationToken);
+        if (userId == null)
+        {
+            return Unauthorized("Unable to resolve user identity.");
+        }
+
+        request.UserId = userId.Value;
+        var result = await _mediator.Send(request, cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
         return Ok(result);
     }
 

@@ -97,6 +97,7 @@ public class ExecuteGmDecisionRequestHandler : IRequestHandler<ExecuteGmDecision
 
             decision.Status = DecisionStatus.Executed;
             decision.ExecutedAt = DateTimeOffset.UtcNow;
+            decision.ExecutedByUserId = request.ExecutedByUserId;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 

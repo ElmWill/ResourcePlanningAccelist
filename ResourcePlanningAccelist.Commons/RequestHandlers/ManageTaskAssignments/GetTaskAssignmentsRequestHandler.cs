@@ -26,15 +26,22 @@ public class GetTaskAssignmentsRequestHandler : IRequestHandler<GetTaskAssignmen
             .ThenInclude(e => e.User)
             .AsQueryable();
 
-        // If ProjectId is specified, filter by project
-        if (request.ProjectId.HasValue)
+        // Handle PM filtering - skip if PM ID is empty (for GM global view)
+        if (request.PmUserId != Guid.Empty)
         {
-            query = query.Where(t => t.ProjectId == request.ProjectId.Value && t.Project.PmOwnerUserId == request.PmUserId);
+            if (request.ProjectId.HasValue)
+            {
+                query = query.Where(t => t.ProjectId == request.ProjectId.Value && t.Project.PmOwnerUserId == request.PmUserId);
+            }
+            else
+            {
+                query = query.Where(t => t.Project.PmOwnerUserId == request.PmUserId);
+            }
         }
-        else
+        else if (request.ProjectId.HasValue)
         {
-            // Filter by projects managed by this PM
-            query = query.Where(t => t.Project.PmOwnerUserId == request.PmUserId);
+            // If PM ID is empty but Project ID is specified, still filter by project
+            query = query.Where(t => t.ProjectId == request.ProjectId.Value);
         }
 
         // Get total count before pagination

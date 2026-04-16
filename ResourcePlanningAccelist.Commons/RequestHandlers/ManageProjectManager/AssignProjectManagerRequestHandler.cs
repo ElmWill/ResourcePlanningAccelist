@@ -29,6 +29,20 @@ public class AssignProjectManagerRequestHandler : IRequestHandler<AssignProjectM
             throw new InvalidOperationException("Provided user is not a project manager.");
         }
 
+        var activePmProjectCount = await _dbContext.Projects
+            .AsNoTracking()
+            .CountAsync(item =>
+                item.PmOwnerUserId == request.PmUserId &&
+                item.Id != project.Id &&
+                (item.Status == ProjectStatus.Assigned || item.Status == ProjectStatus.InProgress),
+                cancellationToken);
+
+        var projectWillBeActive = project.Status == ProjectStatus.Approved;
+        if (projectWillBeActive && activePmProjectCount >= 2)
+        {
+            throw new InvalidOperationException("This project manager can only hold 2 active projects at a time.");
+        }
+
         project.PmOwnerUserId = request.PmUserId;
 
         if (project.Status == ProjectStatus.Approved)

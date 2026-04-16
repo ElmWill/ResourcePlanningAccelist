@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ResourcePlanningAccelist.Contracts.RequestModels.ManageProjects;
 using ResourcePlanningAccelist.Contracts.ResponseModels.ManageProjects;
 using ResourcePlanningAccelist.WebAPI.AuthorizationPolicies;
+using System.Security.Claims;
 
 namespace ResourcePlanningAccelist.WebAPI.Controllers;
 
@@ -29,12 +30,28 @@ public class ProjectsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("summary")]
+    [Authorize(Policy = AuthorizationPolicyNames.ProjectReadAccess)]
+    public async Task<ActionResult<GetProjectSummaryResponse>> Summary(
+        [FromQuery] GetProjectSummaryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost("create")]
     [Authorize(Policy = AuthorizationPolicyNames.MarketingOnly)]
     public async Task<ActionResult<CreateProjectResponse>> Create(
         [FromBody] CreateProjectRequest request,
         CancellationToken cancellationToken)
     {
+        var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(nameIdentifier, out var userId))
+        {
+            request.CreatedByUserId = userId;
+        }
+
         var result = await _mediator.Send(request, cancellationToken);
         return Ok(result);
     }

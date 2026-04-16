@@ -67,7 +67,9 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
             throw new InvalidOperationException("Project does not exist.");
         }
 
-        var targetEmployeeId = request.EmployeeId;
+    var targetEmployeeId = request.EmployeeId;
+    var isSystemRecommendation = targetEmployeeId == Guid.Empty;
+    var assignmentAllocationPercent = isSystemRecommendation ? 0m : request.AllocationPercent;
 
         if (targetEmployeeId == Guid.Empty)
         {
@@ -141,7 +143,7 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
                         ? allocation
                         : 0m;
                     var remainingCapacity = Math.Max(0m, 100m - existingAllocation);
-                    return remainingCapacity >= request.AllocationPercent;
+                    return remainingCapacity >= assignmentAllocationPercent;
                 })
                 .ToList();
 
@@ -261,7 +263,7 @@ public class CreateAssignmentRequestHandler : IRequestHandler<CreateAssignmentRe
             RoleName = request.RoleName,
             StartDate = request.StartDate,
             EndDate = request.EndDate,
-            AllocationPercent = request.AllocationPercent,
+            AllocationPercent = assignmentAllocationPercent,
             Status = AssignmentStatus.Pending,
             ConflictWarning = metadataNotes.Count == 0 ? null : string.Join(" | ", metadataNotes)
         };

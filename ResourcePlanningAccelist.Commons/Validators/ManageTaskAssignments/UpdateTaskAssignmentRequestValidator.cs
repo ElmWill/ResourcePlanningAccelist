@@ -17,6 +17,22 @@ public class UpdateTaskAssignmentRequestValidator : AbstractValidator<UpdateTask
             .Must(s => new[] { "Pending", "InProgress", "Completed" }.Contains(s, StringComparer.OrdinalIgnoreCase))
             .WithMessage("Status must be one of: Pending, InProgress, Completed");
 
+        When(r => r.TaskName is not null, () =>
+        {
+            RuleFor(r => r.TaskName!)
+                .Must(name => !string.IsNullOrWhiteSpace(name))
+                .WithMessage("Task name cannot be empty")
+                .MaximumLength(500)
+                .WithMessage("Task name must be at most 500 characters");
+        });
+
+        When(r => r.Description is not null, () =>
+        {
+            RuleFor(r => r.Description!)
+                .MaximumLength(2000)
+                .WithMessage("Description must be at most 2000 characters");
+        });
+
         When(r => !string.IsNullOrEmpty(r.Priority), () =>
         {
             RuleFor(r => r.Priority!)

@@ -23,7 +23,8 @@ public class GetProjectManagerProjectActivityRequestHandler : IRequestHandler<Ge
 
         var project = await _dbContext.Projects
             .AsNoTracking()
-            .Where(item => item.Id == request.ProjectId && item.PmOwnerUserId == request.PmUserId)
+            .Where(item => item.Id == request.ProjectId)
+            .Where(item => request.PmUserId == null || request.PmUserId == Guid.Empty || item.PmOwnerUserId == request.PmUserId)
             .Select(item => new
             {
                 item.Id,

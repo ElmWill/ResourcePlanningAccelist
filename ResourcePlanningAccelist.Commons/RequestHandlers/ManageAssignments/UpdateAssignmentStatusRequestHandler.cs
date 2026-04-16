@@ -72,6 +72,31 @@ public class UpdateAssignmentStatusRequestHandler : IRequestHandler<UpdateAssign
         // SAVE FIRST so the recalculation query can see the new status
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        // Check for Project Kickoff (Promotion to InProgress)
+        // If all assignments are now Accepted/InProgress/Completed, move project to InProgress
+        if (parsedStatus == AssignmentStatus.Accepted)
+        {
+            var project = await _dbContext.Projects
+                .Include(p => p.Assignments)
+                .FirstOrDefaultAsync(p => p.Id == assignment.ProjectId, cancellationToken);
+
+            if (project != null && (project.Status == ProjectStatus.Assigned || project.Status == ProjectStatus.Approved))
+            {
+                var hasUnacceptedAssignments = project.Assignments.Any(a => 
+                    a.Status == AssignmentStatus.Pending || 
+                    a.Status == AssignmentStatus.GmApproved || 
+                    a.Status == AssignmentStatus.Approved
+                );
+
+                if (!hasUnacceptedAssignments)
+                {
+                    project.Status = ProjectStatus.InProgress;
+                }
+            }
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
         await AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, assignment.EmployeeId, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 

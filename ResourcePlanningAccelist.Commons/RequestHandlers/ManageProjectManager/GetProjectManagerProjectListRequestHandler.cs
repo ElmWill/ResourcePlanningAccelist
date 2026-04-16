@@ -51,7 +51,7 @@ public class GetProjectManagerProjectListRequestHandler : IRequestHandler<GetPro
                 ProjectId = item.Id,
                 Name = item.Name,
                 ClientName = item.ClientName,
-                Status = (item.Status == ProjectStatus.Completed || item.ProgressPercent >= 100)
+                Status = (item.Status == ProjectStatus.Completed && item.ProgressPercent >= 100)
                     ? "completed"
                     : item.Status == ProjectStatus.Cancelled
                         ? "cancelled"

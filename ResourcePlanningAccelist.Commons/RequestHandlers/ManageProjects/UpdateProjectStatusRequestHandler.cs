@@ -112,30 +112,30 @@ public class UpdateProjectStatusRequestHandler : IRequestHandler<UpdateProjectSt
             var recipients = new HashSet<Guid> { project.CreatedByUserId };
             if (project.PmOwnerUserId.HasValue) recipients.Add(project.PmOwnerUserId.Value);
 
-            foreach (var userId in recipients)
+            var notifications = recipients.Select(userId => new Notification
             {
-                _dbContext.Notifications.Add(new Notification
-                {
-                    UserId = userId,
-                    Type = NotificationType.Alert,
-                    Title = "Project Completed",
-                    Message = $"Congratulations! The project '{project.Name}' has reached 100% progress and is officially completed.",
-                    IsRead = false,
-                    SourceEntityType = nameof(Project),
-                    SourceEntityId = project.Id
-                });
-            }
+                UserId = userId,
+                Type = NotificationType.Alert,
+                Title = "Project Completed",
+                Message = $"Congratulations! The project '{project.Name}' has reached 100% progress and is officially completed.",
+                IsRead = false,
+                SourceEntityType = nameof(Project),
+                SourceEntityId = project.Id
+            }).ToList();
 
-            // 3. Notifications for Employees
+            // 3. Notifications for Employees (Batch fetch query outside the loop)
+            var activeEmployeeIds = activeAssignments.Select(a => a.EmployeeId).Distinct().ToList();
+            var employeeDict = await _dbContext.Employees
+                .AsNoTracking()
+                .Where(e => activeEmployeeIds.Contains(e.Id))
+                .ToDictionaryAsync(e => e.Id, cancellationToken);
+
             foreach (var assignment in activeAssignments)
             {
-                var employee = await _dbContext.Employees.AsNoTracking()
-                    .Where(e => e.Id == assignment.EmployeeId)
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (employee != null)
+                if (employeeDict.TryGetValue(assignment.EmployeeId, out var employee))
                 {
-                    _dbContext.Notifications.Add(new Notification
+                    // add one notification in loop
+                    notifications.Add(new Notification
                     {
                         UserId = employee.UserId,
                         Type = NotificationType.Assignment,
@@ -148,13 +148,14 @@ public class UpdateProjectStatusRequestHandler : IRequestHandler<UpdateProjectSt
                 }
             }
 
+            _dbContext.Notifications.AddRange(notifications);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // 4. Recalculate workload for freed-up employees
-            foreach (var assignment in activeAssignments)
-            {
-                await ResourcePlanningAccelist.Commons.RequestHandlers.ManageAssignments.AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadAsync(_dbContext, assignment.EmployeeId, cancellationToken);
-            }
+            // 4. Recalculate workload for freed-up employees (Batch call)
+            await ResourcePlanningAccelist.Commons.RequestHandlers.ManageAssignments.AssignmentWorkloadUpdater.RecalculateEmployeeWorkloadsAsync(
+                _dbContext, 
+                activeEmployeeIds, 
+                cancellationToken);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

@@ -35,6 +35,22 @@ public class RequestClarificationHandler : IRequestHandler<RequestClarificationR
         decision.ClarificationRequestedAt = DateTimeOffset.UtcNow;
         decision.ClarificationReason = request.Reason;
 
+        // Notify the General Manager who submitted the decision
+        if (decision.SubmittedByUserId.HasValue)
+        {
+            _dbContext.Notifications.Add(new Notification
+            {
+                UserId = decision.SubmittedByUserId.Value,
+                Type = NotificationType.Alert,
+                Title = "Clarification Requested",
+                Message = $"HR has requested clarification on your decision: '{decision.Title}'. Reason: {request.Reason}",
+                CreatedAt = DateTimeOffset.UtcNow,
+                IsRead = false,
+                SourceEntityType = "GmDecision",
+                SourceEntityId = decision.ProjectId ?? decision.Id
+            });
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new RequestClarificationResponse
